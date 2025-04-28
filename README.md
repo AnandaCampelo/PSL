@@ -28,13 +28,19 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
               | <loop>
               | <block>
 
-<declaration> ::= "✋" <identifier>
+<declaration> ::= "✋" (<number-type> | <string-type>) <identifier>
 
-<assignment> ::= "👉" <identifier> <expression>
+<number-type> ::= "💅"
+
+<string-type> ::= "✍️"
+
+<assignment> ::= "👉" (<input> | <operation> | <identifier>) <expression>
+
+<operation> ::= ("👆" | "👇")
 
 <print> ::= "☝️" <expression>
 
-<input> ::= "🤙"
+<input> ::= "🫵"
 
 <bind> ::= "🤝" <identifier> <identifier>
 
@@ -59,14 +65,14 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
 <add-operator> ::= "👆" (* soma (+) *)
                  | "👇" (* subtração (-) *)
 
-<mul-operator> ::= "👍" (* multiplicação (*) *)
-                 | "👎" (* divisão (/) *)
+<mul-operator> ::= "🫴" (* multiplicação (*) *)
+                 | "🫳" (* divisão (/) *)
 
 <identifier> ::= <letter> { <letter> | <digit> }
 
-<number> ::= "💅" <digit> { <digit> }
+<number> ::= <digit> { <digit> }
 
-<string> ::= "✍️" "\"" { <letter> | <digit> | " " | "!" | "?" | "," | "." } "\""
+<string> ::= "\"" { <letter> | <digit> | " " | "!" | "?" | "," | "." } "\""
 
 (* Operadores de Comparação usando Emojis *)
 <comparator> ::= "👋" (* diferente (!=) *)
@@ -89,9 +95,9 @@ digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 
 - O programa sempre deve terminar com o ícone "🛑".
 - Blocos de código (em `if` e `while`) são delimitados pelo ícone de mão aberta "🖐️".
-- Todas as variáveis são declaradas com "✋".
-- O tipo de valor (número ou string) é indicado na atribuição: "💅" para números, "✍️" para strings.
-- Números são precedidos do ícone "💅" e strings do ícone "✍️".
+- Todas as variáveis são declaradas com "✋" seguidas de seu tipo ("💅" para números, "✍️" para strings).
+- O tipo de valor é determinado na declaração.
+- Atribuições podem envolver operações diretas.
 - Operadores de comparação e operadores aritméticos são representados por emojis.
 - A linguagem suporta operações de soma, subtração, multiplicação, divisão, comparações, impressão, entrada e vínculo de variáveis.
 - Identificadores seguem a convenção de letras e dígitos, sem espaços.
@@ -101,33 +107,33 @@ digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 ## Exemplo de Programa em PSL
 
 ```text
-✋ idade
-✋ nome
-✋ x
-✋ y
-👉 idade 💅22
-👉 nome ✍️"Ananda"
-👉 x 💅10
-👉 y 💅15
+✋💅 idade
+✋✍️ nome
+✋💅 x
+✋💅 y
+👉 idade 22
+👉 nome "Ananda"
+👉 x 10
+👉 y 15
 🤝 x y
-👉 x 👆5
+👉 x 👆 5
 ☝️ y
-👉 nome 🤙
+👉 nome 🫵
 ☝️ nome
-✊ idade 🤜 💅18
+✊ idade 🤜 18
 🖐️
-    ☝️ ✍️"Maior de idade!"
+    ☝️ "Maior de idade!"
 🖐️
 🛑
 ```
 
 **Explicação:**
-- Declara variáveis de número e string usando "✋".
-- Atribui valores numéricos com "💅" e strings com "✍️".
-- Vínculo (`🤝`) entre `x` e `y`, alterações feitas em `x` serão espelhadas em `y`.
+- Declara variáveis de número e string usando "✋" seguidas de tipo.
+- Atribui valores diretamente.
+- Vínculo (`🤝`) entre `x` e `y`, operações simples feitas em `x` serão espelhadas em `y`.
   - Vínculo (`🤝`) só pode ser feito entre variáveis não nulas e de valor numérico.
-- Soma (`👆`) feita sobre o valor atual de `x`.
-- Entrada de valor do usuário (`🤙`) para `nome`.
+- Operação de soma (`👆`) realizada sobre `x`.
+- Entrada de valor do usuário (`🫵`) para `nome`.
 - Impressão de valores.
 - Verifica se `idade` é maior que 18 e imprime mensagem.
 - Finaliza o programa.
