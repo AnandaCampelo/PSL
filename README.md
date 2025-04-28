@@ -21,6 +21,9 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
 (* Declarações e Instruções *)
 <statement> ::= <declaration>
               | <assignment>
+              | <print>
+              | <input>
+              | <bind>
               | <conditional>
               | <loop>
               | <block>
@@ -29,13 +32,19 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
 
 <assignment> ::= "👉" <identifier> <expression>
 
+<print> ::= "☝️" <expression>
+
+<input> ::= "🤙"
+
+<bind> ::= "🤝" <identifier> <identifier>
+
 <conditional> ::= "✊" <condition> <block>
 
 <loop> ::= "🤌" <condition> <block>
 
 <block> ::= "🖐️" { <statement> } "🖐️"
 
-(* Condições *)
+(* Expressões *)
 <condition> ::= <expression> <comparator> <expression>
 
 <expression> ::= <term> { <add-operator> <term> }
@@ -44,6 +53,7 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
 
 <factor> ::= <identifier>
            | <number>
+           | <string>
            | "(" <expression> ")"
 
 <add-operator> ::= "👆" (* soma (+) *)
@@ -56,6 +66,8 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
 
 <number> ::= "💅" <digit> { <digit> }
 
+<string> ::= "✍️" "\"" { <letter> | <digit> | " " | "!" | "?" | "," | "." } "\""
+
 (* Operadores de Comparação usando Emojis *)
 <comparator> ::= "👋" (* diferente (!=) *)
                | "👏" (* igual (==) *)
@@ -65,7 +77,7 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
                | "🤛🤏" (* menor ou igual (<=) *)
 
 (* Unidades Básicas *)
-<letter> ::= "A" | "B" | "C" | ... | "Z" 
+<letter> ::= "A" | "B" | "C" | ... | "Z"
            | "a" | "b" | "c" | ... | "z"
 
 digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
@@ -77,36 +89,51 @@ digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 
 - O programa sempre deve terminar com o ícone "🛑".
 - Blocos de código (em `if` e `while`) são delimitados pelo ícone de mão aberta "🖐️".
-- Números são precedidos do ícone "💅".
+- Todas as variáveis são declaradas com "✋".
+- O tipo de valor (número ou string) é indicado na atribuição: "💅" para números, "✍️" para strings.
+- Números são precedidos do ícone "💅" e strings do ícone "✍️".
 - Operadores de comparação e operadores aritméticos são representados por emojis.
+- A linguagem suporta operações de soma, subtração, multiplicação, divisão, comparações, impressão, entrada e vínculo de variáveis.
 - Identificadores seguem a convenção de letras e dígitos, sem espaços.
-- Expressões agora suportam operações aritméticas (soma, subtração, multiplicação, divisão) além das comparações.
 
 ---
 
 ## Exemplo de Programa em PSL
 
 ```text
+✋ idade
+✋ nome
 ✋ x
-👉 x 💅5
-✊ x 🤜 💅3
+✋ y
+👉 idade 💅22
+👉 nome ✍️"Ananda"
+👉 x 💅10
+👉 y 💅15
+🤝 x y
+👉 x 👆5
+☝️ y
+👉 nome 🤙
+☝️ nome
+✊ idade 🤜 💅18
 🖐️
-    ✋ y
-    👉 y 💅10
+    ☝️ ✍️"Maior de idade!"
 🖐️
 🛑
 ```
 
 **Explicação:**
-- Declara a variável `x`
-- Atribui o valor `5` para `x`
-- Se `x > 3`, então:
-  - Declara a variável `y`
-  - Atribui o valor `10` para `y`
-- Finaliza o programa
+- Declara variáveis de número e string usando "✋".
+- Atribui valores numéricos com "💅" e strings com "✍️".
+- Vínculo (`🤝`) entre `x` e `y`, alterações feitas em `x` serão espelhadas em `y`.
+  - Vínculo (`🤝`) só pode ser feito entre variáveis não nulas e de valor numérico.
+- Soma (`👆`) feita sobre o valor atual de `x`.
+- Entrada de valor do usuário (`🤙`) para `nome`.
+- Impressão de valores.
+- Verifica se `idade` é maior que 18 e imprime mensagem.
+- Finaliza o programa.
 
 ---
 
 ## Resumo
 
-A PSL é uma linguagem simbólica que visa explorar uma representação visual e inclusiva para a programação básica, mantendo a estrutura tradicional de declarações, atribuições, condições e repetições de forma inovadora e acessível.
+A PSL é uma linguagem simbólica e visualmente inclusiva para programação básica. Agora suporta tipos numéricos e strings, impressão, entrada, comparações, operações matemáticas e vínculo dinâmico de variáveis, trazendo uma abordagem inovadora e original para o desenvolvimento de algoritmos.
