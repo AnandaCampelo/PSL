@@ -4,6 +4,8 @@
 
 A PSL (**Programming Sign Language**) é uma linguagem de programação baseada em ícones de mãos e sinais visuais, inspirada na comunicação por linguagem de sinais. O objetivo é representar as estruturas fundamentais de programação de maneira simples, simbólica e acessível.
 
+Cada execução da PSL é associada a um usuário identificado por nome, permitindo manter um histórico de operações exclusivo para cada um. Além disso, PSL permite ações externas como abrir páginas na web, e consultar o histórico de variáveis de qualquer usuário declarado.
+
 A seguir está a estrutura formal da linguagem definida em **Extended Backus-Naur Form (EBNF)**.
 
 ---
@@ -12,7 +14,9 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
 
 ```ebnf
 (* Unidade de Tradução: Programa completo *)
-<translation-unit> ::= { <external-declaration> } <end-program>
+<translation-unit> ::= <user-declaration> { <external-declaration> } <end-program>
+
+<user-declaration> ::= "✍️" <string>
 
 <external-declaration> ::= <statement>
 
@@ -27,11 +31,12 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
               | <conditional>
               | <loop>
               | <block>
+              | <websearch>
+              | <history-access>
 
 <declaration> ::= "✋" (<number-type> | <string-type>) <identifier>
 
 <number-type> ::= "💅"
-
 <string-type> ::= "✍️"
 
 <assignment> ::= "👉" (<input> | <operation> | <identifier>) <expression>
@@ -39,24 +44,20 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
 <operation> ::= ("👆" | "👇")
 
 <print> ::= "☝️" <expression>
-
 <input> ::= "🫵"
-
 <bind> ::= "🤝" <identifier> <identifier>
 
 <conditional> ::= "✊" <condition> <block>
-
 <loop> ::= "🤌" <condition> <block>
-
 <block> ::= "🖐️" { <statement> } "🖐️"
+
+<websearch> ::= "🦾" <string>
+<history-access> ::= "🪬" <string>
 
 (* Expressões *)
 <condition> ::= <expression> <comparator> <expression>
-
 <expression> ::= <term> { <add-operator> <term> }
-
 <term> ::= <factor> { <mul-operator> <factor> }
-
 <factor> ::= <identifier>
            | <number>
            | <string>
@@ -69,9 +70,7 @@ A seguir está a estrutura formal da linguagem definida em **Extended Backus-Nau
                  | "🫳" (* divisão (/) *)
 
 <identifier> ::= <letter> { <letter> | <digit> }
-
 <number> ::= <digit> { <digit> }
-
 <string> ::= "\"" { <letter> | <digit> | " " | "!" | "?" | "," | "." } "\""
 
 (* Operadores de Comparação usando Emojis *)
@@ -93,20 +92,23 @@ digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 
 ## Observações
 
+- O programa inicia com a declaração de usuário "✍️ \"nome\"", que vincula as ações a um histórico pessoal.
 - O programa sempre deve terminar com o ícone "🛑".
 - Blocos de código (em `if` e `while`) são delimitados pelo ícone de mão aberta "🖐️".
 - Todas as variáveis são declaradas com "✋" seguidas de seu tipo ("💅" para números, "✍️" para strings).
 - O tipo de valor é determinado na declaração.
 - Atribuições podem envolver operações diretas.
 - Operadores de comparação e operadores aritméticos são representados por emojis.
-- A linguagem suporta operações de soma, subtração, multiplicação, divisão, comparações, impressão, entrada e vínculo de variáveis.
-- Identificadores seguem a convenção de letras e dígitos, sem espaços.
+- PSL permite vinculação de variáveis, condições, entrada, impressão e comandos externos.
+- Comando `🦾 "site"` abre o navegador com a URL correspondente a `www.<site>.com`.
+- Comando `🪬 "nome"` acessa o histórico de variáveis daquele usuário, exibindo os nomes e valores atuais.
 
 ---
 
 ## Exemplo de Programa em PSL
 
 ```text
+✍️ "Ananda"
 ✋💅 idade
 ✋✍️ nome
 ✋💅 x
@@ -123,23 +125,20 @@ digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 ✊ idade 🤜 18
 🖐️
     ☝️ "Maior de idade!"
+    🦾 "google"
 🖐️
+🪬 "Ananda"
 🛑
 ```
 
 **Explicação:**
-- Declara variáveis de número e string usando "✋" seguidas de tipo.
-- Atribui valores diretamente.
-- Vínculo (`🤝`) entre `x` e `y`, operações simples feitas em `x` serão espelhadas em `y`.
-  - Vínculo (`🤝`) só pode ser feito entre variáveis não nulas e de valor numérico.
-- Operação de soma (`👆`) realizada sobre `x`.
-- Entrada de valor do usuário (`🫵`) para `nome`.
-- Impressão de valores.
-- Verifica se `idade` é maior que 18 e imprime mensagem.
-- Finaliza o programa.
+- Declara o nome do usuário com "✍️" para iniciar o escopo de execução.
+- Executa operações associadas ao usuário "Ananda".
+- Usa `🦾 "google"` para abrir o navegador em "www.google.com".
+- Usa `🪬 "Ananda"` para acessar o histórico de variáveis declaradas por "Ananda".
 
 ---
 
 ## Resumo
 
-A PSL é uma linguagem simbólica e visualmente inclusiva para programação básica. Agora suporta tipos numéricos e strings, impressão, entrada, comparações, operações matemáticas e vínculo dinâmico de variáveis, trazendo uma abordagem inovadora e original para o desenvolvimento de algoritmos.
+A PSL é uma linguagem simbólica e visualmente acessível para programação com escopo individual por usuário. Suporta criação de variáveis, manipulação, condicionais, comandos externos, e agora também permite **consulta de histórico de execução** e **acesso a sites dinâmicos** com base em entrada textual do usuário.
