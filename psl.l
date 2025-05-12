@@ -32,7 +32,11 @@
 "🤜🤏"        return GTE;
 "🤛🤏"        return LTE;
 
-\"[^\"]*\"    { yylval.str = strdup(yytext); return STRING; }
+\"[^\"]*\"    {
+    yytext[yyleng - 1] = '\0';               // remove aspas finais
+    yylval.str = strdup(yytext + 1);         // ignora aspas iniciais
+    return STRING;
+}
 [0-9]+        { yylval.num = atoi(yytext); return NUMBER; }
 [A-Za-z_][A-Za-z0-9_]*  { yylval.str = strdup(yytext); return IDENTIFIER; }
 

@@ -894,35 +894,39 @@ case 26:
 /* rule 26 can match eol */
 YY_RULE_SETUP
 #line 35 "psl.l"
-{ yylval.str = strdup(yytext); return STRING; }
+{
+    yytext[yyleng - 1] = '\0';               // remove aspas finais
+    yylval.str = strdup(yytext + 1);         // ignora aspas iniciais
+    return STRING;
+}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 36 "psl.l"
+#line 40 "psl.l"
 { yylval.num = atoi(yytext); return NUMBER; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 37 "psl.l"
+#line 41 "psl.l"
 { yylval.str = strdup(yytext); return IDENTIFIER; }
 	YY_BREAK
 case 29:
 /* rule 29 can match eol */
 YY_RULE_SETUP
-#line 39 "psl.l"
+#line 43 "psl.l"
 ;  // Ignora espaços
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 40 "psl.l"
+#line 44 "psl.l"
 { printf("Caractere inesperado: %s\n", yytext); return -1; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 41 "psl.l"
+#line 45 "psl.l"
 ECHO;
 	YY_BREAK
-#line 926 "lex.yy.c"
+#line 930 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1927,5 +1931,5 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 41 "psl.l"
+#line 45 "psl.l"
 

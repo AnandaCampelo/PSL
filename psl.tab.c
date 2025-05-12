@@ -72,12 +72,102 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>  // para system()
+#include <stdbool.h>
 
 void yyerror(const char *s) {
     fprintf(stderr, "Erro de sintaxe: %s\n", s);
 }
 
-#line 81 "psl.tab.c"
+// Variáveis
+typedef enum { T_INT, T_STRING } VarType;
+
+typedef struct {
+    char* name;
+    VarType type;
+    union {
+        int intValue;
+        char* strValue;
+    } value;
+} Variable;
+
+#define MAX_VARS 100
+Variable vars[MAX_VARS];
+int var_count = 0;
+char* current_user = NULL;
+
+// Funções auxiliares
+int find_var(const char* name) {
+    for (int i = 0; i < var_count; i++) {
+        if (strcmp(vars[i].name, name) == 0) return i;
+    }
+    return -1;
+}
+
+void set_var(const char* name, VarType type, void* value) {
+    int i = find_var(name);
+    if (i == -1 && var_count < MAX_VARS) {
+        vars[var_count].name = strdup(name);
+        vars[var_count].type = type;
+        if (type == T_INT)
+            vars[var_count].value.intValue = *(int*)value;
+        else
+            vars[var_count].value.strValue = strdup((char*)value);
+        var_count++;
+    } else if (i != -1) {
+        if (type == T_INT)
+            vars[i].value.intValue = *(int*)value;
+        else {
+            free(vars[i].value.strValue);
+            vars[i].value.strValue = strdup((char*)value);
+        }
+    }
+}
+
+void print_var(const char* name) {
+    int i = find_var(name);
+    if (i == -1) {
+        printf("Erro: variável %s não encontrada\n", name);
+        return;
+    }
+    if (vars[i].type == T_INT)
+        printf("%s = %d\n", vars[i].name, vars[i].value.intValue);
+    else
+        printf("%s = %s\n", vars[i].name, vars[i].value.strValue);
+}
+
+void print_history(const char* user) {
+    if (user == NULL || current_user == NULL) {
+        printf("Erro interno: usuário indefinido.\n");
+        return;
+    }
+    if (strcmp(user, current_user) != 0) {
+        printf("Histórico de \"%s\" não disponível nesta execução.\n", user);
+        return;
+    }
+    printf("📜 Histórico de variáveis para %s:\n", user);
+    for (int i = 0; i < var_count; i++) {
+        if (vars[i].type == T_INT)
+            printf("  %s = %d\n", vars[i].name, vars[i].value.intValue);
+        else
+            printf("  %s = %s\n", vars[i].name, vars[i].value.strValue);
+    }
+}
+
+void abrir_site(const char* nome) {
+    char url[256];
+    snprintf(url, sizeof(url), "https://www.%s.com", nome);
+    char comando[300];
+    snprintf(comando, sizeof(comando), "xdg-open \"%s\" &> /dev/null", url);
+    int r = system(comando);
+    if (r != 0) {
+        fprintf(stderr, "Erro ao tentar abrir: %s\n", url);
+    } else {
+        printf("🌐 Abrindo: %s\n", url);
+    }
+}
+
+#line 171 "psl.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -138,10 +228,12 @@ enum yysymbol_kind_t
   YYSYMBOL_LTE = 30,                       /* LTE  */
   YYSYMBOL_YYACCEPT = 31,                  /* $accept  */
   YYSYMBOL_programa = 32,                  /* programa  */
-  YYSYMBOL_statements = 33,                /* statements  */
-  YYSYMBOL_statement = 34,                 /* statement  */
-  YYSYMBOL_tipo = 35,                      /* tipo  */
-  YYSYMBOL_expression = 36                 /* expression  */
+  YYSYMBOL_33_1 = 33,                      /* $@1  */
+  YYSYMBOL_statements = 34,                /* statements  */
+  YYSYMBOL_statement = 35,                 /* statement  */
+  YYSYMBOL_tipo = 36,                      /* tipo  */
+  YYSYMBOL_expression_int = 37,            /* expression_int  */
+  YYSYMBOL_expression_str = 38             /* expression_str  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -469,16 +561,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  4
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   23
+#define YYLAST   22
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  31
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  6
+#define YYNNTS  8
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  16
+#define YYNRULES  17
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  29
+#define YYNSTATES  30
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   285
@@ -528,10 +620,10 @@ static const yytype_int8 yytranslate[] =
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_int8 yyrline[] =
+static const yytype_uint8 yyrline[] =
 {
-       0,    25,    25,    30,    32,    36,    37,    38,    39,    40,
-      41,    42,    46,    47,    51,    52,    53
+       0,   120,   120,   120,   129,   131,   135,   144,   147,   150,
+     153,   156,   159,   160,   164,   165,   169,   173
 };
 #endif
 
@@ -551,8 +643,8 @@ static const char *const yytname[] =
   "NUMBER", "USER", "END", "DECLARE", "NUMTYPE", "STRTYPE", "ASSIGN",
   "ADD", "SUB", "MULT", "DIV", "PRINT", "INPUT", "BIND", "IF", "WHILE",
   "BLOCK_START", "BLOCK_END", "SEARCH", "HISTORY", "EQ", "NEQ", "GT", "LT",
-  "GTE", "LTE", "$accept", "programa", "statements", "statement", "tipo",
-  "expression", YY_NULLPTR
+  "GTE", "LTE", "$accept", "programa", "$@1", "statements", "statement",
+  "tipo", "expression_int", "expression_str", YY_NULLPTR
 };
 
 static const char *
@@ -576,9 +668,9 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -4,     0,     8,    -8,    -8,    -7,    -8,     3,    10,     2,
-      -8,    11,    15,    16,    -8,    -8,    -8,    17,     2,    -8,
-      -8,    -8,    -8,    18,    -8,    -8,    -8,    -8,    -8
+      -4,     5,    12,    -8,    -8,    -8,    -7,    -8,    -3,     9,
+      10,    -8,    11,    15,    16,    -8,    -8,    -8,    17,     0,
+      -8,    18,    -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -586,21 +678,21 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,     0,     0,     3,     1,     0,     2,     0,     0,     0,
-       8,     0,     0,     0,     4,    12,    13,     0,     0,    15,
-      16,    14,     7,     0,    10,    11,     5,     6,     9
+       0,     0,     0,     2,     1,     4,     0,     3,     0,     0,
+       0,    12,     0,     0,     0,     5,    14,    15,     0,     0,
+       9,     0,    11,    10,     6,    17,    16,     7,     8,    13
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -8,    -8,    -8,    -8,    -8,     5
+      -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     2,     5,    14,    17,    22
+       0,     2,     5,     6,    15,    18,    27,    28
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -608,39 +700,39 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       6,     7,     1,     3,     8,    19,    20,    21,     4,     9,
-      10,    11,    15,    16,    18,    23,    12,    13,    24,    25,
-       0,    26,    28,    27
+       7,     8,     1,    25,     9,    26,    16,    17,     3,    10,
+      11,    12,     4,    19,    20,    21,    13,    14,    22,    23,
+       0,    24,    29
 };
 
 static const yytype_int8 yycheck[] =
 {
-       7,     8,     6,     3,    11,     3,     4,     5,     0,    16,
-      17,    18,     9,    10,     4,     4,    23,    24,     3,     3,
-      -1,     4,     4,    18
+       7,     8,     6,     3,    11,     5,     9,    10,     3,    16,
+      17,    18,     0,     4,     4,     4,    23,    24,     3,     3,
+      -1,     4,     4
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     6,    32,     3,     0,    33,     7,     8,    11,    16,
-      17,    18,    23,    24,    34,     9,    10,    35,     4,     3,
-       4,     5,    36,     4,     3,     3,     4,    36,     4
+       0,     6,    32,     3,     0,    33,    34,     7,     8,    11,
+      16,    17,    18,    23,    24,    35,     9,    10,    36,     4,
+       4,     4,     3,     3,     4,     3,     5,    37,    38,     4
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    31,    32,    33,    33,    34,    34,    34,    34,    34,
-      34,    34,    35,    35,    36,    36,    36
+       0,    31,    33,    32,    34,    34,    35,    35,    35,    35,
+      35,    35,    35,    35,    36,    36,    37,    38
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     4,     0,     2,     3,     3,     2,     1,     3,
-       2,     2,     1,     1,     1,     1,     1
+       0,     2,     0,     5,     0,     2,     3,     3,     3,     2,
+       2,     2,     1,     3,     1,     1,     1,     1
 };
 
 
@@ -1103,16 +1195,103 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 2: /* programa: USER STRING statements END  */
-#line 25 "psl.y"
-                               {
-        printf("Usuário: %s\n", (yyvsp[-2].str));
+  case 2: /* $@1: %empty  */
+#line 120 "psl.y"
+                {
+        current_user = strdup((yyvsp[0].str));
+        printf("Usuário: %s\n", current_user);
     }
-#line 1112 "psl.tab.c"
+#line 1205 "psl.tab.c"
+    break;
+
+  case 3: /* programa: USER STRING $@1 statements END  */
+#line 124 "psl.y"
+                   {
+        printf("Programa PSL processado com sucesso!\n");
+    }
+#line 1213 "psl.tab.c"
+    break;
+
+  case 6: /* statement: DECLARE tipo IDENTIFIER  */
+#line 135 "psl.y"
+                            {
+        if (strcmp((yyvsp[-1].str), "int") == 0) {
+            int zero = 0;
+            set_var((yyvsp[0].str), T_INT, &zero);
+        } else {
+            char* vazio = "";
+            set_var((yyvsp[0].str), T_STRING, vazio);
+        }
+    }
+#line 1227 "psl.tab.c"
+    break;
+
+  case 7: /* statement: ASSIGN IDENTIFIER expression_int  */
+#line 144 "psl.y"
+                                     {
+        set_var((yyvsp[-1].str), T_INT, &(yyvsp[0].num));
+    }
+#line 1235 "psl.tab.c"
+    break;
+
+  case 8: /* statement: ASSIGN IDENTIFIER expression_str  */
+#line 147 "psl.y"
+                                     {
+        set_var((yyvsp[-1].str), T_STRING, (yyvsp[0].str));
+    }
+#line 1243 "psl.tab.c"
+    break;
+
+  case 9: /* statement: PRINT IDENTIFIER  */
+#line 150 "psl.y"
+                     {
+        print_var((yyvsp[0].str));
+    }
+#line 1251 "psl.tab.c"
+    break;
+
+  case 10: /* statement: HISTORY STRING  */
+#line 153 "psl.y"
+                   {
+        print_history((yyvsp[0].str));
+    }
+#line 1259 "psl.tab.c"
+    break;
+
+  case 11: /* statement: SEARCH STRING  */
+#line 156 "psl.y"
+                  {
+        abrir_site((yyvsp[0].str));
+    }
+#line 1267 "psl.tab.c"
+    break;
+
+  case 14: /* tipo: NUMTYPE  */
+#line 164 "psl.y"
+            { (yyval.str) = "int"; }
+#line 1273 "psl.tab.c"
+    break;
+
+  case 15: /* tipo: STRTYPE  */
+#line 165 "psl.y"
+            { (yyval.str) = "string"; }
+#line 1279 "psl.tab.c"
+    break;
+
+  case 16: /* expression_int: NUMBER  */
+#line 169 "psl.y"
+           { (yyval.num) = (yyvsp[0].num); }
+#line 1285 "psl.tab.c"
+    break;
+
+  case 17: /* expression_str: STRING  */
+#line 173 "psl.y"
+           { (yyval.str) = (yyvsp[0].str); }
+#line 1291 "psl.tab.c"
     break;
 
 
-#line 1116 "psl.tab.c"
+#line 1295 "psl.tab.c"
 
       default: break;
     }
@@ -1305,4 +1484,4 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 55 "psl.y"
+#line 176 "psl.y"
