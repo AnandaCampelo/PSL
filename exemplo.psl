@@ -1,0 +1,38 @@
+titulo
+    Exemplo de Documento PSL
+
+subtitulo
+    Demonstração de Funcionalidades
+
+paragrafo
+    Este é um exemplo de documento PSL que será convertido
+    para Markdown.
+
+lista
+    Item 1 da lista
+    Item 2 da lista
+    Item 3 da lista
+
+enumerar
+    Primeiro passo
+    Segundo passo
+    Terceiro passo
+
+tarefas
+    s Tarefa concluída
+    n Tarefa pendente
+
+codigo python
+    def hello():
+        print("Hello, World!")
+
+imagem
+    alt Logo Python
+    src python.png
+
+divisor
+
+tabela
+    cabecalho Nome, Idade, Cidade
+    João, 30, São Paulo
+    Maria, 25, Rio de Janeiro

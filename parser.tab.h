@@ -35,11 +35,11 @@
    especially those whose name start with YY_ or yy_.  They are
    private implementation details that can be changed or removed.  */
 
-#ifndef YY_YY_PSL_TAB_H_INCLUDED
-# define YY_YY_PSL_TAB_H_INCLUDED
+#ifndef YY_YY_PARSER_TAB_H_INCLUDED
+# define YY_YY_PARSER_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 0
+# define YYDEBUG 1
 #endif
 #if YYDEBUG
 extern int yydebug;
@@ -54,34 +54,24 @@ extern int yydebug;
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
-    STRING = 258,                  /* STRING  */
-    IDENTIFIER = 259,              /* IDENTIFIER  */
-    NUMBER = 260,                  /* NUMBER  */
-    USER = 261,                    /* USER  */
-    END = 262,                     /* END  */
-    DECLARE = 263,                 /* DECLARE  */
-    NUMTYPE = 264,                 /* NUMTYPE  */
-    STRTYPE = 265,                 /* STRTYPE  */
-    ASSIGN = 266,                  /* ASSIGN  */
-    ADD = 267,                     /* ADD  */
-    SUB = 268,                     /* SUB  */
-    MULT = 269,                    /* MULT  */
-    DIV = 270,                     /* DIV  */
-    PRINT = 271,                   /* PRINT  */
-    INPUT = 272,                   /* INPUT  */
-    BIND = 273,                    /* BIND  */
-    IF = 274,                      /* IF  */
-    WHILE = 275,                   /* WHILE  */
-    BLOCK_START = 276,             /* BLOCK_START  */
-    BLOCK_END = 277,               /* BLOCK_END  */
-    SEARCH = 278,                  /* SEARCH  */
-    HISTORY = 279,                 /* HISTORY  */
-    EQ = 280,                      /* EQ  */
-    NEQ = 281,                     /* NEQ  */
-    GT = 282,                      /* GT  */
-    LT = 283,                      /* LT  */
-    GTE = 284,                     /* GTE  */
-    LTE = 285                      /* LTE  */
+    INDENTED_TEXT = 258,           /* INDENTED_TEXT  */
+    TEXT_LINE = 259,               /* TEXT_LINE  */
+    CODIGO = 260,                  /* CODIGO  */
+    CABECALHO = 261,               /* CABECALHO  */
+    ALT = 262,                     /* ALT  */
+    SRC = 263,                     /* SRC  */
+    STATUS_S = 264,                /* STATUS_S  */
+    STATUS_N = 265,                /* STATUS_N  */
+    TITULO = 266,                  /* TITULO  */
+    SUBTITULO = 267,               /* SUBTITULO  */
+    PARAGRAFO = 268,               /* PARAGRAFO  */
+    LISTA = 269,                   /* LISTA  */
+    ENUMERAR = 270,                /* ENUMERAR  */
+    TAREFAS = 271,                 /* TAREFAS  */
+    IMAGEM = 272,                  /* IMAGEM  */
+    DIVISOR = 273,                 /* DIVISOR  */
+    TABELA = 274,                  /* TABELA  */
+    NEWLINE = 275                  /* NEWLINE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -90,12 +80,11 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 101 "psl.y"
+#line 50 "parser.y"
 
-    int num;
-    char* str;
+    char *str;
 
-#line 99 "psl.tab.h"
+#line 88 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -110,4 +99,4 @@ extern YYSTYPE yylval;
 int yyparse (void);
 
 
-#endif /* !YY_YY_PSL_TAB_H_INCLUDED  */
+#endif /* !YY_YY_PARSER_TAB_H_INCLUDED  */

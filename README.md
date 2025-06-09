@@ -1,144 +1,154 @@
-# PSL (Programming Sign Language) - Definição EBNF
+# PSL - Procedural Structure Language
 
-## Introdução
-
-A PSL (**Programming Sign Language**) é uma linguagem de programação baseada em ícones de mãos e sinais visuais, inspirada na comunicação por linguagem de sinais. O objetivo é representar as estruturas fundamentais de programação de maneira simples, simbólica e acessível.
-
-Cada execução da PSL é associada a um usuário identificado por nome, permitindo manter um histórico de operações exclusivo para cada um. Além disso, PSL permite ações externas como abrir páginas na web, e consultar o histórico de variáveis de qualquer usuário declarado.
-
-A seguir está a estrutura formal da linguagem definida em **Extended Backus-Naur Form (EBNF)**.
+**PSL** é uma linguagem de marcação estruturada com elementos de programação, projetada para gerar documentos `.md` (Markdown) a partir de um arquivo `.psl`. Ela combina blocos declarativos como títulos, listas, imagens e código com estruturas lógicas como variáveis, condicionais e repetições.
 
 ---
 
-## Definição EBNF da PSL
+## Objetivo
+
+Permitir a criação de documentos Markdown dinâmicos, organizados por blocos indentados, com controle condicional e repetitivo do conteúdo, utilizando uma sintaxe simples e expressiva.
+
+---
+
+## Características
+
+* Estrutura baseada em **indentacão**
+* Suporte a **listas**, **parágrafos**, **código**, **imagens**, **links**, **tabelas**, etc.
+* Suporte a **condicionais** e **loops**
+* Geração de arquivos `.md` automática e estruturada
+
+---
+
+## EBNF da linguagem PSL
 
 ```ebnf
-(* Unidade de Tradução: Programa completo *)
-<translation-unit> ::= <user-declaration> { <external-declaration> } <end-program>
+PROGRAMA       = { BLOCO } ;
 
-<user-declaration> ::= "✍️" <string>
+BLOCO          = COMANDO_MARCA | COMANDO_PROG ;
 
-<external-declaration> ::= <statement>
+COMANDO_MARCA  = TITULO | SUBTITULO | PARAGRAFO | LISTA | ENUMERAR |
+                 CODIGO_BLOCO | IMAGEM | LINK | CITAÇÃO |
+                 CHECKBOXES | TABELA | DIVISOR | NOTA ;
 
-<end-program> ::= "🛑"
+COMANDO_PROG   = IF | LOOP ;
 
-(* Declarações e Instruções *)
-<statement> ::= <declaration>
-              | <assignment>
-              | <print>
-              | <input>
-              | <bind>
-              | <conditional>
-              | <loop>
-              | <block>
-              | <websearch>
-              | <history-access>
+TITULO         = "titulo", NOVA_LINHA, INDENT, TEXTO ;
+SUBTITULO      = "subtitulo", NOVA_LINHA, INDENT, TEXTO ;
+PARAGRAFO      = "paragrafo", NOVA_LINHA, { INDENT, TEXTO, NOVA_LINHA } ;
 
-<declaration> ::= "✋" (<number-type> | <string-type>) <identifier>
+LISTA          = "lista", NOVA_LINHA, { INDENT, TEXTO, NOVA_LINHA } ;
+ENUMERAR       = "enumerar", NOVA_LINHA, { INDENT, TEXTO, NOVA_LINHA } ;
 
-<number-type> ::= "💅"
-<string-type> ::= "✍️"
+CHECKBOXES     = "tarefas", NOVA_LINHA, { INDENT, STATUS, TEXTO, NOVA_LINHA } ;
+STATUS         = "s" | "n" | "sim" | "não" ;
 
-<assignment> ::= "👉" (<input> | <operation> | <identifier>) <expression>
+CODIGO_BLOCO   = "codigo", [LINGUAGEM], NOVA_LINHA,
+                 { INDENT, LINHA_CODIGO }, SEPARADOR ;
 
-<operation> ::= ("👆" | "👇")
+IMAGEM         = "imagem", NOVA_LINHA,
+                 INDENT, "alt", TEXTO, NOVA_LINHA,
+                 INDENT, "src", TEXTO ;
 
-<print> ::= "☝️" <expression>
-<input> ::= "🫵"
-<bind> ::= "🤝" <identifier> <identifier>
+LINK           = "link", NOVA_LINHA,
+                 INDENT, "texto", TEXTO, NOVA_LINHA,
+                 INDENT, "url", TEXTO ;
 
-<conditional> ::= "✊" <condition> <block>
-<loop> ::= "🤌" <condition> <block>
-<block> ::= "🖐️" { <statement> } "🖐️"
+CITAÇÃO        = "citacao", NOVA_LINHA, INDENT, TEXTO ;
+NOTA           = "nota", NOVA_LINHA, INDENT, TEXTO ;
+DIVISOR        = "divisor" ;
 
-<websearch> ::= "🦾" <string>
-<history-access> ::= "🪬" <string>
+TABELA         = "tabela", NOVA_LINHA,
+                 INDENT, "cabecalho", CABECALHO, NOVA_LINHA,
+                 { INDENT, LINHA_TABELA } ;
 
-(* Expressões *)
-<condition> ::= <expression> <comparator> <expression>
-<expression> ::= <term> { <add-operator> <term> }
-<term> ::= <factor> { <mul-operator> <factor> }
-<factor> ::= <identifier>
-           | <number>
-           | <string>
-           | "(" <expression> ")"
+CABECALHO      = TEXTO , { "," , TEXTO } ;
+LINHA_TABELA   = TEXTO , { "," , TEXTO } ;
 
-<add-operator> ::= "👆" (* soma (+) *)
-                 | "👇" (* subtração (-) *)
+IF             = "se", IDENT, OP_REL, TEXTO, NOVA_LINHA,
+                 INDENT, "entao", NOVA_LINHA,
+                 { INDENT2, BLOCO },
+                 [ INDENT, "senao", NOVA_LINHA,
+                   { INDENT2, BLOCO } ] ;
 
-<mul-operator> ::= "🫴" (* multiplicação (*) *)
-                 | "🫳" (* divisão (/) *)
+LOOP           = "repetir", NUMERO, "vezes", NOVA_LINHA,
+                 { INDENT, BLOCO } ;
 
-<identifier> ::= <letter> { <letter> | <digit> }
-<number> ::= <digit> { <digit> }
-<string> ::= "\"" { <letter> | <digit> | " " | "!" | "?" | "," | "." } "\""
+OP_REL         = "igual" | "diferente" | "maior" | "menor" | "maior_igual" | "menor_igual" ;
 
-(* Operadores de Comparação usando Emojis *)
-<comparator> ::= "👋" (* diferente (!=) *)
-               | "👏" (* igual (==) *)
-               | "🤜" (* maior (>) *)
-               | "🤛" (* menor (<) *)
-               | "🤜🤏" (* maior ou igual (>=) *)
-               | "🤛🤏" (* menor ou igual (<=) *)
+LINGUAGEM      = IDENT ;
+LINHA_CODIGO   = TEXTO ;
 
-(* Unidades Básicas *)
-<letter> ::= "A" | "B" | "C" | ... | "Z"
-           | "a" | "b" | "c" | ... | "z"
+TEXTO          = { CHAR } ;
+CHAR           = ? qualquer caractere visível (exceto \n) ? ;
+IDENT          = letra , { letra | digito } ;
+NUMERO         = digito , { digito } ;
 
-digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+INDENT         = ? um nível de indentação ? ;
+INDENT2        = ? dois níveis de indentação ? ;
+NOVA_LINHA     = "\n" ;
+SEPARADOR      = (palavra-chave não indentada, ou EOF) ;
 ```
 
 ---
 
-## Observações
+## Exemplo de entrada `.psl`
 
-- O programa inicia com a declaração de usuário "✍️ \"nome\"", que vincula as ações a um histórico pessoal.
-- O programa sempre deve terminar com o ícone "🛑".
-- Blocos de código (em `if` e `while`) são delimitados pelo ícone de mão aberta "🖐️".
-- Todas as variáveis são declaradas com "✋" seguidas de seu tipo ("💅" para números, "✍️" para strings).
-- O tipo de valor é determinado na declaração.
-- Atribuições podem envolver operações diretas.
-- Operadores de comparação e operadores aritméticos são representados por emojis.
-- PSL permite vinculação de variáveis, condições, entrada, impressão e comandos externos.
-- Comando `🦾 "site"` abre o navegador com a URL correspondente a `www.<site>.com`.
-- Comando `🪬 "nome"` acessa o histórico de variáveis daquele usuário, exibindo os nomes e valores atuais.
+```psl
+titulo
+    Relatório Final
 
----
+subtitulo
+    Visão Geral
 
-## Exemplo de Programa em PSL
+paragrafo
+    Este relatório descreve os resultados
+    obtidos ao longo do experimento.
 
-```text
-✍️ "Ananda"
-✋💅 idade
-✋✍️ nome
-✋💅 x
-✋💅 y
-👉 idade 22
-👉 nome "Ananda"
-👉 x 10
-👉 y 15
-🤝 x y
-👉 x 👆 5
-☝️ y
-👉 nome 🫵
-☝️ nome
-✊ idade 🤜 18
-🖐️
-    ☝️ "Maior de idade!"
-    🦾 "google"
-🖐️
-🪬 "Ananda"
-🛑
+lista
+    Introdução
+    Metodologia
+    Conclusão
+
+enumerar
+    Passo 1: Coletar dados
+    Passo 2: Analisar resultados
+    Passo 3: Gerar gráficos
+
+tarefas
+    s Corrigir erros
+    n Adicionar conclusão
+    sim Revisar gráficos
+    não Validar tabela
+
+codigo python
+    for i in range(3):
+        print(i)
+
+imagem
+    alt Logo do Projeto
+    src imagens/logo.png
+
+link
+    texto Repositório do Projeto
+    url https://github.com/exemplo
+
+nota
+    Este é um comentário importante.
+
+divisor
+
+se nome igual Ana
+    entao
+        paragrafo
+            Bem-vinda, Ana!
+    senao
+        paragrafo
+            Usuário desconhecido.
+
+repetir 2 vezes
+    enumerar
+        Execução de teste
+        Validação dos dados
 ```
 
-**Explicação:**
-- Declara o nome do usuário com "✍️" para iniciar o escopo de execução.
-- Executa operações associadas ao usuário "Ananda".
-- Usa `🦾 "google"` para abrir o navegador em "www.google.com".
-- Usa `🪬 "Ananda"` para acessar o histórico de variáveis declaradas por "Ananda".
-
 ---
-
-## Resumo
-
-A PSL é uma linguagem simbólica e visualmente acessível para programação com escopo individual por usuário. Suporta criação de variáveis, manipulação, condicionais, comandos externos, e agora também permite **consulta de histórico de execução** e **acesso a sites dinâmicos** com base em entrada textual do usuário.

@@ -67,107 +67,56 @@
 
 
 /* First part of user prologue.  */
-#line 1 "psl.y"
+#line 1 "parser.y"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>  // para system()
-#include <stdbool.h>
+#include <ctype.h>
 
-void yyerror(const char *s) {
-    fprintf(stderr, "Erro de sintaxe: %s\n", s);
+void yyerror(const char *s);
+int yylex(void);
+extern FILE *yyin;
+extern int yylineno;
+
+// For debugging
+void debug_msg(const char* msg) {
+    fprintf(stderr, "DEBUG: %s\n", msg);
 }
 
-// Variáveis
-typedef enum { T_INT, T_STRING } VarType;
-
-typedef struct {
-    char* name;
-    VarType type;
-    union {
-        int intValue;
-        char* strValue;
-    } value;
-} Variable;
-
-#define MAX_VARS 100
-Variable vars[MAX_VARS];
-int var_count = 0;
-char* current_user = NULL;
-
-// Funções auxiliares
-int find_var(const char* name) {
-    for (int i = 0; i < var_count; i++) {
-        if (strcmp(vars[i].name, name) == 0) return i;
-    }
-    return -1;
+// Helper function to trim whitespace
+char *trim(char *str) {
+    if (!str) return NULL;
+    
+    // Trim leading spaces
+    char *start = str;
+    while (*start && (*start == ' ' || *start == '\t')) start++;
+    
+    // If only spaces, return empty string
+    if (!*start) return start;
+    
+    // Trim trailing spaces
+    char *end = start + strlen(start) - 1;
+    while (end > start && (*end == ' ' || *end == '\t')) end--;
+    *(end + 1) = '\0';
+    
+    return start;
 }
 
-void set_var(const char* name, VarType type, void* value) {
-    int i = find_var(name);
-    if (i == -1 && var_count < MAX_VARS) {
-        vars[var_count].name = strdup(name);
-        vars[var_count].type = type;
-        if (type == T_INT)
-            vars[var_count].value.intValue = *(int*)value;
-        else
-            vars[var_count].value.strValue = strdup((char*)value);
-        var_count++;
-    } else if (i != -1) {
-        if (type == T_INT)
-            vars[i].value.intValue = *(int*)value;
-        else {
-            free(vars[i].value.strValue);
-            vars[i].value.strValue = strdup((char*)value);
-        }
-    }
-}
+// To store alt text temporarily
+char *saved_alt_text = NULL;
+// For handling multi-line paragraphs
+char *paragraph_text = NULL;
 
-void print_var(const char* name) {
-    int i = find_var(name);
-    if (i == -1) {
-        printf("Erro: variável %s não encontrada\n", name);
-        return;
-    }
-    if (vars[i].type == T_INT)
-        printf("%s = %d\n", vars[i].name, vars[i].value.intValue);
-    else
-        printf("%s = %s\n", vars[i].name, vars[i].value.strValue);
-}
+// For handling code blocks
+char *code_lines[100];  // Store up to 100 lines of code
+int code_line_count = 0;
+char *code_lang = NULL;
 
-void print_history(const char* user) {
-    if (user == NULL || current_user == NULL) {
-        printf("Erro interno: usuário indefinido.\n");
-        return;
-    }
-    if (strcmp(user, current_user) != 0) {
-        printf("Histórico de \"%s\" não disponível nesta execução.\n", user);
-        return;
-    }
-    printf("📜 Histórico de variáveis para %s:\n", user);
-    for (int i = 0; i < var_count; i++) {
-        if (vars[i].type == T_INT)
-            printf("  %s = %d\n", vars[i].name, vars[i].value.intValue);
-        else
-            printf("  %s = %s\n", vars[i].name, vars[i].value.strValue);
-    }
-}
+// Global flags
+int enum_count = 1;
 
-void abrir_site(const char* nome) {
-    char url[256];
-    snprintf(url, sizeof(url), "https://www.%s.com", nome);
-    char comando[300];
-    snprintf(comando, sizeof(comando), "xdg-open \"%s\" &> /dev/null", url);
-    int r = system(comando);
-    if (r != 0) {
-        fprintf(stderr, "Erro ao tentar abrir: %s\n", url);
-    } else {
-        printf("🌐 Abrindo: %s\n", url);
-    }
-}
-
-#line 171 "psl.tab.c"
+#line 120 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -190,7 +139,7 @@ void abrir_site(const char* nome) {
 #  endif
 # endif
 
-#include "psl.tab.h"
+#include "parser.tab.h"
 /* Symbol kind.  */
 enum yysymbol_kind_t
 {
@@ -198,42 +147,50 @@ enum yysymbol_kind_t
   YYSYMBOL_YYEOF = 0,                      /* "end of file"  */
   YYSYMBOL_YYerror = 1,                    /* error  */
   YYSYMBOL_YYUNDEF = 2,                    /* "invalid token"  */
-  YYSYMBOL_STRING = 3,                     /* STRING  */
-  YYSYMBOL_IDENTIFIER = 4,                 /* IDENTIFIER  */
-  YYSYMBOL_NUMBER = 5,                     /* NUMBER  */
-  YYSYMBOL_USER = 6,                       /* USER  */
-  YYSYMBOL_END = 7,                        /* END  */
-  YYSYMBOL_DECLARE = 8,                    /* DECLARE  */
-  YYSYMBOL_NUMTYPE = 9,                    /* NUMTYPE  */
-  YYSYMBOL_STRTYPE = 10,                   /* STRTYPE  */
-  YYSYMBOL_ASSIGN = 11,                    /* ASSIGN  */
-  YYSYMBOL_ADD = 12,                       /* ADD  */
-  YYSYMBOL_SUB = 13,                       /* SUB  */
-  YYSYMBOL_MULT = 14,                      /* MULT  */
-  YYSYMBOL_DIV = 15,                       /* DIV  */
-  YYSYMBOL_PRINT = 16,                     /* PRINT  */
-  YYSYMBOL_INPUT = 17,                     /* INPUT  */
-  YYSYMBOL_BIND = 18,                      /* BIND  */
-  YYSYMBOL_IF = 19,                        /* IF  */
-  YYSYMBOL_WHILE = 20,                     /* WHILE  */
-  YYSYMBOL_BLOCK_START = 21,               /* BLOCK_START  */
-  YYSYMBOL_BLOCK_END = 22,                 /* BLOCK_END  */
-  YYSYMBOL_SEARCH = 23,                    /* SEARCH  */
-  YYSYMBOL_HISTORY = 24,                   /* HISTORY  */
-  YYSYMBOL_EQ = 25,                        /* EQ  */
-  YYSYMBOL_NEQ = 26,                       /* NEQ  */
-  YYSYMBOL_GT = 27,                        /* GT  */
-  YYSYMBOL_LT = 28,                        /* LT  */
-  YYSYMBOL_GTE = 29,                       /* GTE  */
-  YYSYMBOL_LTE = 30,                       /* LTE  */
-  YYSYMBOL_YYACCEPT = 31,                  /* $accept  */
-  YYSYMBOL_programa = 32,                  /* programa  */
-  YYSYMBOL_33_1 = 33,                      /* $@1  */
-  YYSYMBOL_statements = 34,                /* statements  */
-  YYSYMBOL_statement = 35,                 /* statement  */
-  YYSYMBOL_tipo = 36,                      /* tipo  */
-  YYSYMBOL_expression_int = 37,            /* expression_int  */
-  YYSYMBOL_expression_str = 38             /* expression_str  */
+  YYSYMBOL_INDENTED_TEXT = 3,              /* INDENTED_TEXT  */
+  YYSYMBOL_TEXT_LINE = 4,                  /* TEXT_LINE  */
+  YYSYMBOL_CODIGO = 5,                     /* CODIGO  */
+  YYSYMBOL_CABECALHO = 6,                  /* CABECALHO  */
+  YYSYMBOL_ALT = 7,                        /* ALT  */
+  YYSYMBOL_SRC = 8,                        /* SRC  */
+  YYSYMBOL_STATUS_S = 9,                   /* STATUS_S  */
+  YYSYMBOL_STATUS_N = 10,                  /* STATUS_N  */
+  YYSYMBOL_TITULO = 11,                    /* TITULO  */
+  YYSYMBOL_SUBTITULO = 12,                 /* SUBTITULO  */
+  YYSYMBOL_PARAGRAFO = 13,                 /* PARAGRAFO  */
+  YYSYMBOL_LISTA = 14,                     /* LISTA  */
+  YYSYMBOL_ENUMERAR = 15,                  /* ENUMERAR  */
+  YYSYMBOL_TAREFAS = 16,                   /* TAREFAS  */
+  YYSYMBOL_IMAGEM = 17,                    /* IMAGEM  */
+  YYSYMBOL_DIVISOR = 18,                   /* DIVISOR  */
+  YYSYMBOL_TABELA = 19,                    /* TABELA  */
+  YYSYMBOL_NEWLINE = 20,                   /* NEWLINE  */
+  YYSYMBOL_YYACCEPT = 21,                  /* $accept  */
+  YYSYMBOL_document = 22,                  /* document  */
+  YYSYMBOL_blocks = 23,                    /* blocks  */
+  YYSYMBOL_block = 24,                     /* block  */
+  YYSYMBOL_titulo_block = 25,              /* titulo_block  */
+  YYSYMBOL_subtitulo_block = 26,           /* subtitulo_block  */
+  YYSYMBOL_paragrafo_block = 27,           /* paragrafo_block  */
+  YYSYMBOL_indented_lines = 28,            /* indented_lines  */
+  YYSYMBOL_lista_block = 29,               /* lista_block  */
+  YYSYMBOL_lista_items = 30,               /* lista_items  */
+  YYSYMBOL_enumerar_block = 31,            /* enumerar_block  */
+  YYSYMBOL_32_1 = 32,                      /* $@1  */
+  YYSYMBOL_enumerar_items = 33,            /* enumerar_items  */
+  YYSYMBOL_tarefas_block = 34,             /* tarefas_block  */
+  YYSYMBOL_tarefas_items = 35,             /* tarefas_items  */
+  YYSYMBOL_codigo_block = 36,              /* codigo_block  */
+  YYSYMBOL_37_2 = 37,                      /* $@2  */
+  YYSYMBOL_codigo_content = 38,            /* codigo_content  */
+  YYSYMBOL_codigo_lines = 39,              /* codigo_lines  */
+  YYSYMBOL_imagem_block = 40,              /* imagem_block  */
+  YYSYMBOL_alt_line = 41,                  /* alt_line  */
+  YYSYMBOL_src_line = 42,                  /* src_line  */
+  YYSYMBOL_divisor_block = 43,             /* divisor_block  */
+  YYSYMBOL_tabela_block = 44,              /* tabela_block  */
+  YYSYMBOL_cabecalho_line = 45,            /* cabecalho_line  */
+  YYSYMBOL_tabela_rows = 46                /* tabela_rows  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -559,21 +516,21 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  4
+#define YYFINAL  3
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   22
+#define YYLAST   65
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  31
+#define YYNTOKENS  21
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  8
+#define YYNNTS  26
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  17
+#define YYNRULES  46
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  30
+#define YYNSTATES  78
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   285
+#define YYMAXUTOK   275
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -614,16 +571,18 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
-      25,    26,    27,    28,    29,    30
+      15,    16,    17,    18,    19,    20
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_uint8 yyrline[] =
+static const yytype_int16 yyrline[] =
 {
-       0,   120,   120,   120,   129,   131,   135,   144,   147,   150,
-     153,   156,   159,   160,   164,   165,   169,   173
+       0,    64,    64,    67,    69,    70,    74,    75,    76,    77,
+      78,    79,    80,    81,    82,    83,    87,    92,    97,   109,
+     118,   129,   134,   136,   141,   141,   146,   148,   153,   158,
+     160,   162,   164,   170,   169,   199,   203,   208,   216,   220,
+     228,   239,   244,   249,   277,   292,   307
 };
 #endif
 
@@ -639,12 +598,16 @@ static const char *yysymbol_name (yysymbol_kind_t yysymbol) YY_ATTRIBUTE_UNUSED;
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "\"end of file\"", "error", "\"invalid token\"", "STRING", "IDENTIFIER",
-  "NUMBER", "USER", "END", "DECLARE", "NUMTYPE", "STRTYPE", "ASSIGN",
-  "ADD", "SUB", "MULT", "DIV", "PRINT", "INPUT", "BIND", "IF", "WHILE",
-  "BLOCK_START", "BLOCK_END", "SEARCH", "HISTORY", "EQ", "NEQ", "GT", "LT",
-  "GTE", "LTE", "$accept", "programa", "$@1", "statements", "statement",
-  "tipo", "expression_int", "expression_str", YY_NULLPTR
+  "\"end of file\"", "error", "\"invalid token\"", "INDENTED_TEXT",
+  "TEXT_LINE", "CODIGO", "CABECALHO", "ALT", "SRC", "STATUS_S", "STATUS_N",
+  "TITULO", "SUBTITULO", "PARAGRAFO", "LISTA", "ENUMERAR", "TAREFAS",
+  "IMAGEM", "DIVISOR", "TABELA", "NEWLINE", "$accept", "document",
+  "blocks", "block", "titulo_block", "subtitulo_block", "paragrafo_block",
+  "indented_lines", "lista_block", "lista_items", "enumerar_block", "$@1",
+  "enumerar_items", "tarefas_block", "tarefas_items", "codigo_block",
+  "$@2", "codigo_content", "codigo_lines", "imagem_block", "alt_line",
+  "src_line", "divisor_block", "tabela_block", "cabecalho_line",
+  "tabela_rows", YY_NULLPTR
 };
 
 static const char *
@@ -654,7 +617,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-8)
+#define YYPACT_NINF (-9)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -668,9 +631,14 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -4,     5,    12,    -8,    -8,    -8,    -7,    -8,    -3,     9,
-      10,    -8,    11,    15,    16,    -8,    -8,    -8,    17,     0,
-      -8,    18,    -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8
+      -9,     5,    -5,    -9,    -9,    14,    15,    16,    17,    -9,
+      -8,    24,     1,    26,    11,    -9,    -9,    -9,    -9,    -9,
+      -9,    -9,    -9,    -9,    -9,    -9,    30,    18,    19,    20,
+      31,    21,    32,    33,    22,    23,    -6,    25,    29,    -9,
+      27,    41,    -9,    28,    -9,    43,    -9,    -9,    -9,    34,
+      -9,    35,    36,    46,    -9,    -9,    37,    38,    -9,    39,
+      -9,    -9,    40,    47,    -9,    42,    -9,    -9,    -9,    44,
+      -9,    -9,    -9,    -9,    45,    -9,    -9,    -9
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -678,21 +646,30 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,     0,     0,     2,     1,     4,     0,     3,     0,     0,
-       0,    12,     0,     0,     0,     5,    14,    15,     0,     0,
-       9,     0,    11,    10,     6,    17,    16,     7,     8,    13
+       3,     0,     2,     1,    33,     0,     0,     0,     0,    24,
+       0,     0,     0,     0,     0,     4,     6,     7,     8,     9,
+      10,    11,    12,    13,    14,    15,     0,     0,     0,     0,
+      18,     0,    21,     0,     0,     0,    28,     0,     0,    41,
+       0,     0,     5,     0,    34,    35,    16,    17,    19,     0,
+      22,     0,     0,    25,    29,    30,     0,     0,    39,     0,
+      38,    43,     0,    42,    36,     0,    20,    23,    26,     0,
+      31,    32,    40,    44,    46,    37,    27,    45
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8
+      -9,    -9,    -9,    49,    -9,    -9,    -9,    -9,    -9,    -9,
+      -9,    -9,    -9,    -9,    -9,    -9,    -9,    -9,    -9,    -9,
+      -9,    -9,    -9,    -9,    -9,    -9
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     2,     5,     6,    15,    18,    27,    28
+       0,     1,     2,    15,    16,    17,    18,    30,    19,    32,
+      20,    33,    53,    21,    36,    22,    26,    44,    45,    23,
+      38,    60,    24,    25,    41,    63
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -700,39 +677,58 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       7,     8,     1,    25,     9,    26,    16,    17,     3,    10,
-      11,    12,     4,    19,    20,    21,    13,    14,    22,    23,
-       0,    24,    29
+       4,    34,    35,    56,    57,     3,     5,     6,     7,     8,
+       9,    10,    11,    12,    13,    14,     4,    27,    28,    29,
+      31,    39,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    37,    40,    43,    49,    51,    52,    59,    46,    47,
+      48,    50,    54,    55,    62,    58,    65,    61,    64,    69,
+      74,     0,     0,     0,    66,    67,    68,    70,    71,    72,
+      73,     0,    75,    42,    76,    77
 };
 
 static const yytype_int8 yycheck[] =
 {
-       7,     8,     6,     3,    11,     5,     9,    10,     3,    16,
-      17,    18,     0,     4,     4,     4,    23,    24,     3,     3,
-      -1,     4,     4
+       5,     9,    10,     9,    10,     0,    11,    12,    13,    14,
+      15,    16,    17,    18,    19,    20,     5,     3,     3,     3,
+       3,    20,    11,    12,    13,    14,    15,    16,    17,    18,
+      19,     7,     6,     3,     3,     3,     3,     8,    20,    20,
+      20,    20,    20,    20,     3,    20,     3,    20,    20,     3,
+       3,    -1,    -1,    -1,    20,    20,    20,    20,    20,    20,
+      20,    -1,    20,    14,    20,    20
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     6,    32,     3,     0,    33,    34,     7,     8,    11,
-      16,    17,    18,    23,    24,    35,     9,    10,    36,     4,
-       4,     4,     3,     3,     4,     3,     5,    37,    38,     4
+       0,    22,    23,     0,     5,    11,    12,    13,    14,    15,
+      16,    17,    18,    19,    20,    24,    25,    26,    27,    29,
+      31,    34,    36,    40,    43,    44,    37,     3,     3,     3,
+      28,     3,    30,    32,     9,    10,    35,     7,    41,    20,
+       6,    45,    24,     3,    38,    39,    20,    20,    20,     3,
+      20,     3,     3,    33,    20,    20,     9,    10,    20,     8,
+      42,    20,     3,    46,    20,     3,    20,    20,    20,     3,
+      20,    20,    20,    20,     3,    20,    20,    20
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    31,    33,    32,    34,    34,    35,    35,    35,    35,
-      35,    35,    35,    35,    36,    36,    37,    38
+       0,    21,    22,    23,    23,    23,    24,    24,    24,    24,
+      24,    24,    24,    24,    24,    24,    25,    26,    27,    28,
+      28,    29,    30,    30,    32,    31,    33,    33,    34,    35,
+      35,    35,    35,    37,    36,    38,    39,    39,    40,    41,
+      42,    43,    44,    45,    46,    46,    46
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     0,     5,     0,     2,     3,     3,     3,     2,
-       2,     2,     1,     3,     1,     1,     1,     1
+       0,     2,     1,     0,     2,     3,     1,     1,     1,     1,
+       1,     1,     1,     1,     1,     1,     3,     3,     2,     2,
+       3,     2,     2,     3,     0,     3,     2,     3,     2,     2,
+       2,     3,     3,     0,     3,     1,     2,     3,     3,     2,
+       2,     2,     3,     2,     2,     3,     2
 };
 
 
@@ -1195,103 +1191,302 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 2: /* $@1: %empty  */
-#line 120 "psl.y"
-                {
-        current_user = strdup((yyvsp[0].str));
-        printf("Usuário: %s\n", current_user);
-    }
-#line 1205 "psl.tab.c"
+  case 16: /* titulo_block: TITULO INDENTED_TEXT NEWLINE  */
+#line 88 "parser.y"
+    { printf("# %s\n\n", (yyvsp[-1].str)); }
+#line 1198 "parser.tab.c"
     break;
 
-  case 3: /* programa: USER STRING $@1 statements END  */
-#line 124 "psl.y"
-                   {
-        printf("Programa PSL processado com sucesso!\n");
-    }
-#line 1213 "psl.tab.c"
+  case 17: /* subtitulo_block: SUBTITULO INDENTED_TEXT NEWLINE  */
+#line 93 "parser.y"
+    { printf("## %s\n\n", (yyvsp[-1].str)); }
+#line 1204 "parser.tab.c"
     break;
 
-  case 6: /* statement: DECLARE tipo IDENTIFIER  */
-#line 135 "psl.y"
-                            {
-        if (strcmp((yyvsp[-1].str), "int") == 0) {
-            int zero = 0;
-            set_var((yyvsp[0].str), T_INT, &zero);
-        } else {
-            char* vazio = "";
-            set_var((yyvsp[0].str), T_STRING, vazio);
+  case 18: /* paragrafo_block: PARAGRAFO indented_lines  */
+#line 98 "parser.y"
+    { 
+        // Print accumulated paragraph text
+        if (paragraph_text) {
+            printf("%s\n\n", paragraph_text);
+            free(paragraph_text);
+            paragraph_text = NULL;
         }
     }
-#line 1227 "psl.tab.c"
+#line 1217 "parser.tab.c"
     break;
 
-  case 7: /* statement: ASSIGN IDENTIFIER expression_int  */
-#line 144 "psl.y"
-                                     {
-        set_var((yyvsp[-1].str), T_INT, &(yyvsp[0].num));
+  case 19: /* indented_lines: INDENTED_TEXT NEWLINE  */
+#line 110 "parser.y"
+    { 
+        if (paragraph_text) {
+            free(paragraph_text);
+            paragraph_text = NULL;
+        }
+        paragraph_text = strdup((yyvsp[-1].str));
+        (yyval.str) = paragraph_text;
     }
-#line 1235 "psl.tab.c"
+#line 1230 "parser.tab.c"
     break;
 
-  case 8: /* statement: ASSIGN IDENTIFIER expression_str  */
-#line 147 "psl.y"
-                                     {
-        set_var((yyvsp[-1].str), T_STRING, (yyvsp[0].str));
+  case 20: /* indented_lines: indented_lines INDENTED_TEXT NEWLINE  */
+#line 119 "parser.y"
+    { 
+        char *new_text = malloc(strlen(paragraph_text) + strlen((yyvsp[-1].str)) + 2); // +2 for space and null terminator
+        sprintf(new_text, "%s %s", paragraph_text, (yyvsp[-1].str));
+        free(paragraph_text);
+        paragraph_text = new_text;
+        (yyval.str) = paragraph_text;
     }
-#line 1243 "psl.tab.c"
+#line 1242 "parser.tab.c"
     break;
 
-  case 9: /* statement: PRINT IDENTIFIER  */
-#line 150 "psl.y"
-                     {
-        print_var((yyvsp[0].str));
+  case 21: /* lista_block: LISTA lista_items  */
+#line 130 "parser.y"
+    { printf("\n"); }
+#line 1248 "parser.tab.c"
+    break;
+
+  case 22: /* lista_items: INDENTED_TEXT NEWLINE  */
+#line 135 "parser.y"
+    { printf("- %s\n", (yyvsp[-1].str)); }
+#line 1254 "parser.tab.c"
+    break;
+
+  case 23: /* lista_items: lista_items INDENTED_TEXT NEWLINE  */
+#line 137 "parser.y"
+    { printf("- %s\n", (yyvsp[-1].str)); }
+#line 1260 "parser.tab.c"
+    break;
+
+  case 24: /* $@1: %empty  */
+#line 141 "parser.y"
+             { enum_count = 1; }
+#line 1266 "parser.tab.c"
+    break;
+
+  case 25: /* enumerar_block: ENUMERAR $@1 enumerar_items  */
+#line 142 "parser.y"
+    { printf("\n"); }
+#line 1272 "parser.tab.c"
+    break;
+
+  case 26: /* enumerar_items: INDENTED_TEXT NEWLINE  */
+#line 147 "parser.y"
+    { printf("1. %s\n", (yyvsp[-1].str)); enum_count = 2; }
+#line 1278 "parser.tab.c"
+    break;
+
+  case 27: /* enumerar_items: enumerar_items INDENTED_TEXT NEWLINE  */
+#line 149 "parser.y"
+    { printf("%d. %s\n", enum_count++, (yyvsp[-1].str)); }
+#line 1284 "parser.tab.c"
+    break;
+
+  case 28: /* tarefas_block: TAREFAS tarefas_items  */
+#line 154 "parser.y"
+    { printf("\n"); }
+#line 1290 "parser.tab.c"
+    break;
+
+  case 29: /* tarefas_items: STATUS_S NEWLINE  */
+#line 159 "parser.y"
+    { printf("- [x] %s\n", (yyvsp[-1].str)); }
+#line 1296 "parser.tab.c"
+    break;
+
+  case 30: /* tarefas_items: STATUS_N NEWLINE  */
+#line 161 "parser.y"
+    { printf("- [ ] %s\n", (yyvsp[-1].str)); }
+#line 1302 "parser.tab.c"
+    break;
+
+  case 31: /* tarefas_items: tarefas_items STATUS_S NEWLINE  */
+#line 163 "parser.y"
+    { printf("- [x] %s\n", (yyvsp[-1].str)); }
+#line 1308 "parser.tab.c"
+    break;
+
+  case 32: /* tarefas_items: tarefas_items STATUS_N NEWLINE  */
+#line 165 "parser.y"
+    { printf("- [ ] %s\n", (yyvsp[-1].str)); }
+#line 1314 "parser.tab.c"
+    break;
+
+  case 33: /* $@2: %empty  */
+#line 170 "parser.y"
+    { 
+        // Reset code block state
+        code_line_count = 0;
+        if (code_lang) free(code_lang);
+        code_lang = strdup((yyvsp[0].str));
+        
+        // Free any previous code lines
+        for (int i = 0; i < 100; i++) {
+            if (code_lines[i]) {
+                free(code_lines[i]);
+                code_lines[i] = NULL;
+            }
+        }
     }
-#line 1251 "psl.tab.c"
+#line 1333 "parser.tab.c"
     break;
 
-  case 10: /* statement: HISTORY STRING  */
-#line 153 "psl.y"
-                   {
-        print_history((yyvsp[0].str));
+  case 34: /* codigo_block: CODIGO $@2 codigo_content  */
+#line 185 "parser.y"
+    { 
+        // Print the code block with proper formatting
+        printf("```%s\n", code_lang);
+        for (int i = 0; i < code_line_count; i++) {
+            printf("%s\n", code_lines[i]);
+            free(code_lines[i]);
+            code_lines[i] = NULL;
+        }
+        printf("```\n\n");
+        code_line_count = 0;
     }
-#line 1259 "psl.tab.c"
+#line 1349 "parser.tab.c"
     break;
 
-  case 11: /* statement: SEARCH STRING  */
-#line 156 "psl.y"
-                  {
-        abrir_site((yyvsp[0].str));
+  case 36: /* codigo_lines: INDENTED_TEXT NEWLINE  */
+#line 204 "parser.y"
+    { 
+        // Store code line
+        code_lines[code_line_count++] = strdup((yyvsp[-1].str));
     }
-#line 1267 "psl.tab.c"
+#line 1358 "parser.tab.c"
     break;
 
-  case 14: /* tipo: NUMTYPE  */
-#line 164 "psl.y"
-            { (yyval.str) = "int"; }
-#line 1273 "psl.tab.c"
+  case 37: /* codigo_lines: codigo_lines INDENTED_TEXT NEWLINE  */
+#line 209 "parser.y"
+    { 
+        // Store additional code line
+        code_lines[code_line_count++] = strdup((yyvsp[-1].str));
+    }
+#line 1367 "parser.tab.c"
     break;
 
-  case 15: /* tipo: STRTYPE  */
-#line 165 "psl.y"
-            { (yyval.str) = "string"; }
-#line 1279 "psl.tab.c"
+  case 39: /* alt_line: ALT NEWLINE  */
+#line 221 "parser.y"
+    { 
+        if (saved_alt_text) free(saved_alt_text);
+        saved_alt_text = strdup((yyvsp[-1].str));
+    }
+#line 1376 "parser.tab.c"
     break;
 
-  case 16: /* expression_int: NUMBER  */
-#line 169 "psl.y"
-           { (yyval.num) = (yyvsp[0].num); }
-#line 1285 "psl.tab.c"
+  case 40: /* src_line: SRC NEWLINE  */
+#line 229 "parser.y"
+    { 
+        printf("![%s](%s)\n\n", saved_alt_text ? saved_alt_text : "", (yyvsp[-1].str));
+        if (saved_alt_text) {
+            free(saved_alt_text);
+            saved_alt_text = NULL;
+        }
+    }
+#line 1388 "parser.tab.c"
     break;
 
-  case 17: /* expression_str: STRING  */
-#line 173 "psl.y"
-           { (yyval.str) = (yyvsp[0].str); }
-#line 1291 "psl.tab.c"
+  case 41: /* divisor_block: DIVISOR NEWLINE  */
+#line 240 "parser.y"
+    { printf("---\n\n"); }
+#line 1394 "parser.tab.c"
+    break;
+
+  case 42: /* tabela_block: TABELA cabecalho_line tabela_rows  */
+#line 245 "parser.y"
+    { printf("\n"); }
+#line 1400 "parser.tab.c"
+    break;
+
+  case 43: /* cabecalho_line: CABECALHO NEWLINE  */
+#line 250 "parser.y"
+    {
+        char *s = strdup((yyvsp[-1].str));
+        char *token, *saveptr;
+        
+        // Print header row
+        printf("|");
+        token = strtok_r(s, ",", &saveptr);
+        while (token != NULL) {
+            token = trim(token);
+            printf(" %s |", token);
+            token = strtok_r(NULL, ",", &saveptr);
+        }
+        printf("\n|");
+        
+        // Print separator row
+        s = strdup((yyvsp[-1].str));
+        token = strtok_r(s, ",", &saveptr);
+        while (token != NULL) {
+            printf(" --- |");
+            token = strtok_r(NULL, ",", &saveptr);
+        }
+        printf("\n");
+        free(s);
+    }
+#line 1429 "parser.tab.c"
+    break;
+
+  case 44: /* tabela_rows: INDENTED_TEXT NEWLINE  */
+#line 278 "parser.y"
+    {
+        char *s = strdup((yyvsp[-1].str));
+        char *token, *saveptr;
+        
+        printf("|");
+        token = strtok_r(s, ",", &saveptr);
+        while (token != NULL) {
+            token = trim(token);
+            printf(" %s |", token);
+            token = strtok_r(NULL, ",", &saveptr);
+        }
+        printf("\n");
+        free(s);
+    }
+#line 1448 "parser.tab.c"
+    break;
+
+  case 45: /* tabela_rows: tabela_rows INDENTED_TEXT NEWLINE  */
+#line 293 "parser.y"
+    {
+        char *s = strdup((yyvsp[-1].str));
+        char *token, *saveptr;
+        
+        printf("|");
+        token = strtok_r(s, ",", &saveptr);
+        while (token != NULL) {
+            token = trim(token);
+            printf(" %s |", token);
+            token = strtok_r(NULL, ",", &saveptr);
+        }
+        printf("\n");
+        free(s);
+    }
+#line 1467 "parser.tab.c"
+    break;
+
+  case 46: /* tabela_rows: tabela_rows INDENTED_TEXT  */
+#line 308 "parser.y"
+    {
+        char *s = strdup((yyvsp[0].str));
+        char *token, *saveptr;
+        
+        printf("|");
+        token = strtok_r(s, ",", &saveptr);
+        while (token != NULL) {
+            token = trim(token);
+            printf(" %s |", token);
+            token = strtok_r(NULL, ",", &saveptr);
+        }
+        printf("\n");
+        free(s);
+    }
+#line 1486 "parser.tab.c"
     break;
 
 
-#line 1295 "psl.tab.c"
+#line 1490 "parser.tab.c"
 
       default: break;
     }
@@ -1484,4 +1679,9 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 176 "psl.y"
+#line 324 "parser.y"
+
+
+void yyerror(const char *s) {
+    fprintf(stderr, "Erro: %s na linha %d\n", s, yylineno);
+}
