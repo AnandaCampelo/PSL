@@ -36,6 +36,8 @@ codigo python
     for i in range(3):
         print(i)
 
+divisor
+
 imagem
     alt Logo do Projeto
     src imagens/logo.png

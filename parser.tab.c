@@ -74,16 +74,20 @@
 #include <string.h>
 #include <ctype.h>
 #include "common.h"
+#include "PSL-Compiler/src/psl_llvm.h"  // Incluir o gerador LLVM
 
 void yyerror(const char *s);
 int yylex(void);
 extern FILE *yyin;
 extern int yylineno;
 
-// For debugging
+// Para debugging
 void debug_msg(const char* msg) {
     fprintf(stderr, "DEBUG: %s\n", msg);
 }
+
+// Contexto do compilador LLVM
+PSLCompilerContext* compiler_ctx = NULL;
 
 // Global variables for state tracking
 char *saved_alt_text = NULL;
@@ -104,7 +108,7 @@ int condition_op = OP_IGUAL;
 // Global flags
 int enum_count = 1;
 
-#line 108 "parser.tab.c"
+#line 112 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -166,37 +170,40 @@ enum yysymbol_kind_t
   YYSYMBOL_SE = 31,                        /* SE  */
   YYSYMBOL_YYACCEPT = 32,                  /* $accept  */
   YYSYMBOL_document = 33,                  /* document  */
-  YYSYMBOL_blocks = 34,                    /* blocks  */
-  YYSYMBOL_block = 35,                     /* block  */
-  YYSYMBOL_titulo_block = 36,              /* titulo_block  */
-  YYSYMBOL_subtitulo_block = 37,           /* subtitulo_block  */
-  YYSYMBOL_paragrafo_block = 38,           /* paragrafo_block  */
-  YYSYMBOL_indented_lines = 39,            /* indented_lines  */
-  YYSYMBOL_lista_block = 40,               /* lista_block  */
-  YYSYMBOL_lista_items = 41,               /* lista_items  */
-  YYSYMBOL_enumerar_block = 42,            /* enumerar_block  */
-  YYSYMBOL_43_1 = 43,                      /* $@1  */
-  YYSYMBOL_enumerar_items = 44,            /* enumerar_items  */
-  YYSYMBOL_tarefas_block = 45,             /* tarefas_block  */
-  YYSYMBOL_tarefas_items = 46,             /* tarefas_items  */
-  YYSYMBOL_codigo_block = 47,              /* codigo_block  */
-  YYSYMBOL_48_2 = 48,                      /* $@2  */
-  YYSYMBOL_codigo_content = 49,            /* codigo_content  */
-  YYSYMBOL_codigo_lines = 50,              /* codigo_lines  */
-  YYSYMBOL_imagem_block = 51,              /* imagem_block  */
-  YYSYMBOL_alt_line = 52,                  /* alt_line  */
-  YYSYMBOL_src_line = 53,                  /* src_line  */
-  YYSYMBOL_link_block = 54,                /* link_block  */
-  YYSYMBOL_texto_line = 55,                /* texto_line  */
-  YYSYMBOL_url_line = 56,                  /* url_line  */
-  YYSYMBOL_nota_block = 57,                /* nota_block  */
-  YYSYMBOL_citacao_block = 58,             /* citacao_block  */
-  YYSYMBOL_divisor_block = 59,             /* divisor_block  */
-  YYSYMBOL_tabela_block = 60,              /* tabela_block  */
-  YYSYMBOL_cabecalho_line = 61,            /* cabecalho_line  */
-  YYSYMBOL_tabela_rows = 62,               /* tabela_rows  */
-  YYSYMBOL_se_block = 63,                  /* se_block  */
-  YYSYMBOL_repetir_block = 64              /* repetir_block  */
+  YYSYMBOL_34_1 = 34,                      /* $@1  */
+  YYSYMBOL_blocks = 35,                    /* blocks  */
+  YYSYMBOL_block = 36,                     /* block  */
+  YYSYMBOL_titulo_block = 37,              /* titulo_block  */
+  YYSYMBOL_subtitulo_block = 38,           /* subtitulo_block  */
+  YYSYMBOL_paragrafo_block = 39,           /* paragrafo_block  */
+  YYSYMBOL_indented_lines = 40,            /* indented_lines  */
+  YYSYMBOL_lista_block = 41,               /* lista_block  */
+  YYSYMBOL_lista_items = 42,               /* lista_items  */
+  YYSYMBOL_enumerar_block = 43,            /* enumerar_block  */
+  YYSYMBOL_44_2 = 44,                      /* $@2  */
+  YYSYMBOL_enumerar_items = 45,            /* enumerar_items  */
+  YYSYMBOL_tarefas_block = 46,             /* tarefas_block  */
+  YYSYMBOL_tarefas_items = 47,             /* tarefas_items  */
+  YYSYMBOL_codigo_block = 48,              /* codigo_block  */
+  YYSYMBOL_49_3 = 49,                      /* $@3  */
+  YYSYMBOL_codigo_content = 50,            /* codigo_content  */
+  YYSYMBOL_codigo_lines = 51,              /* codigo_lines  */
+  YYSYMBOL_imagem_block = 52,              /* imagem_block  */
+  YYSYMBOL_alt_line = 53,                  /* alt_line  */
+  YYSYMBOL_src_line = 54,                  /* src_line  */
+  YYSYMBOL_link_block = 55,                /* link_block  */
+  YYSYMBOL_texto_line = 56,                /* texto_line  */
+  YYSYMBOL_url_line = 57,                  /* url_line  */
+  YYSYMBOL_nota_block = 58,                /* nota_block  */
+  YYSYMBOL_citacao_block = 59,             /* citacao_block  */
+  YYSYMBOL_divisor_block = 60,             /* divisor_block  */
+  YYSYMBOL_tabela_block = 61,              /* tabela_block  */
+  YYSYMBOL_cabecalho_line = 62,            /* cabecalho_line  */
+  YYSYMBOL_tabela_rows = 63,               /* tabela_rows  */
+  YYSYMBOL_se_block = 64,                  /* se_block  */
+  YYSYMBOL_65_4 = 65,                      /* $@4  */
+  YYSYMBOL_repetir_block = 66,             /* repetir_block  */
+  YYSYMBOL_67_5 = 67                       /* $@5  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -524,16 +531,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  3
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   91
+#define YYLAST   90
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  32
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  33
+#define YYNNTS  36
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  63
+#define YYNRULES  66
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  105
+#define YYNSTATES  110
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   286
@@ -585,13 +592,13 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    59,    59,    62,    64,    65,    69,    70,    71,    72,
-      73,    74,    75,    76,    77,    78,    79,    80,    81,    82,
-      83,    84,    88,    93,    98,   110,   119,   130,   135,   137,
-     142,   142,   147,   149,   154,   159,   161,   163,   165,   167,
-     169,   171,   173,   179,   178,   208,   212,   217,   225,   229,
-     237,   248,   252,   260,   271,   282,   293,   298,   303,   331,
-     346,   361,   379,   387
+       0,    63,    63,    63,    78,    80,    81,    85,    86,    87,
+      88,    89,    90,    91,    92,    93,    94,    95,    96,    97,
+      98,    99,   100,   104,   116,   128,   146,   155,   166,   171,
+     182,   196,   196,   201,   213,   227,   232,   243,   254,   265,
+     276,   287,   298,   309,   324,   323,   371,   375,   380,   388,
+     392,   400,   417,   421,   429,   446,   465,   484,   496,   501,
+     534,   549,   564,   583,   582,   603,   602
 };
 #endif
 
@@ -612,14 +619,14 @@ static const char *const yytname[] =
   "URL", "STATUS_SIM", "STATUS_NAO", "REPETIR", "OP_REL", "TITULO",
   "SUBTITULO", "PARAGRAFO", "LISTA", "ENUMERAR", "TAREFAS", "IMAGEM",
   "DIVISOR", "TABELA", "LINK", "NOTA", "CITACAO", "ENTAO", "SENAO",
-  "NEWLINE", "SE", "$accept", "document", "blocks", "block",
+  "NEWLINE", "SE", "$accept", "document", "$@1", "blocks", "block",
   "titulo_block", "subtitulo_block", "paragrafo_block", "indented_lines",
-  "lista_block", "lista_items", "enumerar_block", "$@1", "enumerar_items",
-  "tarefas_block", "tarefas_items", "codigo_block", "$@2",
+  "lista_block", "lista_items", "enumerar_block", "$@2", "enumerar_items",
+  "tarefas_block", "tarefas_items", "codigo_block", "$@3",
   "codigo_content", "codigo_lines", "imagem_block", "alt_line", "src_line",
   "link_block", "texto_line", "url_line", "nota_block", "citacao_block",
   "divisor_block", "tabela_block", "cabecalho_line", "tabela_rows",
-  "se_block", "repetir_block", YY_NULLPTR
+  "se_block", "$@4", "repetir_block", "$@5", YY_NULLPTR
 };
 
 static const char *
@@ -629,7 +636,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-8)
+#define YYPACT_NINF (-20)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -643,17 +650,17 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -8,     9,    -4,    -8,    -8,    -8,     8,    22,    27,    28,
-      -8,    -7,    26,     3,    30,    38,    27,    27,    20,    -8,
-      -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8,
-      -8,    -8,    -8,    -8,    -8,    -8,    46,    23,    24,    25,
-      49,    29,    53,    54,    31,    32,    33,    34,    -5,    35,
-      51,    -8,    36,    57,    37,    58,    49,    49,    -8,    -8,
-      40,    -8,    65,    -8,    -8,    -8,    41,    -8,    42,    43,
-      71,    -8,    -8,    -8,    -8,    45,    47,    48,    50,    -8,
-      52,    -8,    -8,    55,    73,    -8,    56,    -8,    -8,    59,
-      -8,    -8,    -8,    60,    -8,    -8,    -8,    -8,    -8,    -8,
-      61,    -8,    -8,    -8,    -8
+     -20,     7,   -20,   -20,     4,   -20,   -20,     8,     9,    12,
+      13,   -20,    -7,    11,     3,    31,    27,    12,    12,    28,
+     -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,
+     -20,   -20,   -20,   -20,   -20,   -20,   -20,    35,    28,    10,
+      26,    30,    36,    32,    38,    54,    33,    34,    37,    39,
+       1,    40,    58,   -20,    41,    63,    42,    50,    36,    36,
+     -20,   -20,    28,    43,   -20,    65,   -20,   -20,   -20,   -20,
+      44,   -20,    45,    46,    74,   -20,   -20,   -20,   -20,    48,
+      49,    51,    52,   -20,    53,   -20,   -20,    55,    77,   -20,
+      56,   -20,   -20,   -20,    57,   -20,   -20,   -20,    59,   -20,
+     -20,   -20,   -20,   -20,   -20,    60,   -20,   -20,   -20,   -20
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -661,35 +668,35 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       3,     0,     2,     1,    43,    63,     0,     0,     0,     0,
-      30,     0,     0,     0,     0,     0,     0,     0,    21,    62,
-       4,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20,     0,     0,     0,     0,
-      24,     0,    27,     0,     0,     0,     0,     0,    34,     0,
-       0,    56,     0,     0,     0,     0,    54,    55,    21,     5,
-       0,    44,    45,    22,    23,    25,     0,    28,     0,     0,
-      31,    35,    36,    37,    38,     0,     0,     0,     0,    49,
-       0,    48,    58,     0,    57,    52,     0,    51,    46,     0,
-      26,    29,    32,     0,    39,    40,    41,    42,    50,    59,
-      61,    53,    47,    33,    60
+       2,     0,     4,     1,     3,    44,    65,     0,     0,     0,
+       0,    31,     0,     0,     0,     0,     0,     0,     0,    22,
+      63,     5,     7,     8,     9,    10,    11,    12,    13,    14,
+      15,    16,    17,    18,    19,    20,    21,     0,     0,     0,
+       0,     0,    25,     0,    28,     0,     0,     0,     0,     0,
+      35,     0,     0,    57,     0,     0,     0,     0,    55,    56,
+      22,     6,     0,     0,    45,    46,    66,    23,    24,    26,
+       0,    29,     0,     0,    32,    36,    37,    38,    39,     0,
+       0,     0,     0,    50,     0,    49,    59,     0,    58,    53,
+       0,    52,    64,    47,     0,    27,    30,    33,     0,    40,
+      41,    42,    43,    51,    60,    62,    54,    48,    34,    61
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -8,    -8,    -8,    63,    -8,    -8,    -8,    12,    -8,    -8,
-      -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8,
-      -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8,    -8,
-      -8,    -8,    -8
+     -20,   -20,   -20,   -20,   -19,   -20,   -20,   -20,   -14,   -20,
+     -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,
+     -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,
+     -20,   -20,   -20,   -20,   -20,   -20
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     1,     2,    20,    21,    22,    23,    40,    24,    42,
-      25,    43,    70,    26,    48,    27,    36,    61,    62,    28,
-      50,    81,    29,    55,    87,    30,    31,    32,    33,    53,
-      84,    34,    35
+       0,     1,     2,     4,    21,    22,    23,    24,    42,    25,
+      44,    26,    45,    74,    27,    50,    28,    37,    64,    65,
+      29,    52,    85,    30,    57,    91,    31,    32,    33,    34,
+      55,    88,    35,    62,    36,    38
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -697,71 +704,71 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       4,    44,    45,    75,    76,    46,    47,    77,    78,     3,
-       5,    37,     6,     7,     8,     9,    10,    11,    12,    13,
-      14,    15,    16,    17,     4,    38,    18,    19,    56,    57,
-      39,    41,    49,    51,     5,    52,     6,     7,     8,     9,
-      10,    11,    12,    13,    14,    15,    16,    17,    54,    60,
-      58,    19,    66,    63,    64,    65,    68,    69,    80,    67,
-      83,    71,    72,    73,    74,    79,    82,    85,    89,    86,
-      88,    90,    91,    92,    93,    94,   100,    95,    96,     0,
-      97,    59,    98,     0,     0,    99,   101,     0,     0,   102,
-     103,   104
+      61,    46,    47,    58,    59,    48,    49,     3,     5,    79,
+      80,    39,    40,    81,    82,    41,    43,    51,     6,    66,
+       7,     8,     9,    10,    11,    12,    13,    14,    15,    16,
+      17,    18,     5,    53,    19,    20,    54,    56,    63,    70,
+      67,    72,     6,    92,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    68,    73,    60,    20,
+      69,    90,    71,    75,    76,    84,    87,    77,    94,    78,
+      83,    86,    89,    93,    95,    96,    97,    98,    99,   100,
+     105,   101,   102,   103,     0,   104,   106,   107,     0,   108,
+     109
 };
 
 static const yytype_int8 yycheck[] =
 {
-       4,     8,     9,     8,     9,    12,    13,    12,    13,     0,
-      14,     3,    16,    17,    18,    19,    20,    21,    22,    23,
-      24,    25,    26,    27,     4,     3,    30,    31,    16,    17,
-       3,     3,     6,    30,    14,     5,    16,    17,    18,    19,
-      20,    21,    22,    23,    24,    25,    26,    27,    10,     3,
-      30,    31,     3,    30,    30,    30,     3,     3,     7,    30,
-       3,    30,    30,    30,    30,    30,    30,    30,     3,    11,
-      30,    30,    30,    30,     3,    30,     3,    30,    30,    -1,
-      30,    18,    30,    -1,    -1,    30,    30,    -1,    -1,    30,
-      30,    30
+      19,     8,     9,    17,    18,    12,    13,     0,     4,     8,
+       9,     3,     3,    12,    13,     3,     3,     6,    14,    38,
+      16,    17,    18,    19,    20,    21,    22,    23,    24,    25,
+      26,    27,     4,    30,    30,    31,     5,    10,     3,     3,
+      30,     3,    14,    62,    16,    17,    18,    19,    20,    21,
+      22,    23,    24,    25,    26,    27,    30,     3,    30,    31,
+      30,    11,    30,    30,    30,     7,     3,    30,     3,    30,
+      30,    30,    30,    30,    30,    30,    30,     3,    30,    30,
+       3,    30,    30,    30,    -1,    30,    30,    30,    -1,    30,
+      30
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    33,    34,     0,     4,    14,    16,    17,    18,    19,
-      20,    21,    22,    23,    24,    25,    26,    27,    30,    31,
-      35,    36,    37,    38,    40,    42,    45,    47,    51,    54,
-      57,    58,    59,    60,    63,    64,    48,     3,     3,     3,
-      39,     3,    41,    43,     8,     9,    12,    13,    46,     6,
-      52,    30,     5,    61,    10,    55,    39,    39,    30,    35,
-       3,    49,    50,    30,    30,    30,     3,    30,     3,     3,
-      44,    30,    30,    30,    30,     8,     9,    12,    13,    30,
-       7,    53,    30,     3,    62,    30,    11,    56,    30,     3,
-      30,    30,    30,     3,    30,    30,    30,    30,    30,    30,
-       3,    30,    30,    30,    30
+       0,    33,    34,     0,    35,     4,    14,    16,    17,    18,
+      19,    20,    21,    22,    23,    24,    25,    26,    27,    30,
+      31,    36,    37,    38,    39,    41,    43,    46,    48,    52,
+      55,    58,    59,    60,    61,    64,    66,    49,    67,     3,
+       3,     3,    40,     3,    42,    44,     8,     9,    12,    13,
+      47,     6,    53,    30,     5,    62,    10,    56,    40,    40,
+      30,    36,    65,     3,    50,    51,    36,    30,    30,    30,
+       3,    30,     3,     3,    45,    30,    30,    30,    30,     8,
+       9,    12,    13,    30,     7,    54,    30,     3,    63,    30,
+      11,    57,    36,    30,     3,    30,    30,    30,     3,    30,
+      30,    30,    30,    30,    30,     3,    30,    30,    30,    30
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    32,    33,    34,    34,    34,    35,    35,    35,    35,
-      35,    35,    35,    35,    35,    35,    35,    35,    35,    35,
-      35,    35,    36,    37,    38,    39,    39,    40,    41,    41,
-      43,    42,    44,    44,    45,    46,    46,    46,    46,    46,
-      46,    46,    46,    48,    47,    49,    50,    50,    51,    52,
+       0,    32,    34,    33,    35,    35,    35,    36,    36,    36,
+      36,    36,    36,    36,    36,    36,    36,    36,    36,    36,
+      36,    36,    36,    37,    38,    39,    40,    40,    41,    42,
+      42,    44,    43,    45,    45,    46,    47,    47,    47,    47,
+      47,    47,    47,    47,    49,    48,    50,    51,    51,    52,
       53,    54,    55,    56,    57,    58,    59,    60,    61,    62,
-      62,    62,    63,    64
+      63,    63,    63,    65,    64,    67,    66
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     1,     0,     2,     3,     1,     1,     1,     1,
+       0,     2,     0,     2,     0,     2,     3,     1,     1,     1,
        1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
-       1,     1,     3,     3,     2,     2,     3,     2,     2,     3,
-       0,     3,     2,     3,     2,     2,     2,     2,     2,     3,
-       3,     3,     3,     0,     3,     1,     2,     3,     3,     2,
-       2,     3,     2,     2,     2,     2,     2,     3,     2,     2,
-       3,     2,     1,     1
+       1,     1,     1,     3,     3,     2,     2,     3,     2,     2,
+       3,     0,     3,     2,     3,     2,     2,     2,     2,     2,
+       3,     3,     3,     3,     0,     3,     1,     2,     3,     3,
+       2,     2,     3,     2,     2,     2,     2,     2,     3,     2,
+       2,     3,     2,     0,     3,     0,     3
 };
 
 
@@ -1224,33 +1231,75 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 22: /* titulo_block: TITULO INDENTED_TEXT NEWLINE  */
-#line 89 "parser.y"
-    { printf("# %s\n\n", (yyvsp[-1].str)); }
-#line 1231 "parser.tab.c"
+  case 2: /* $@1: %empty  */
+#line 63 "parser.y"
+    { 
+        // Inicializar o compilador no início do parsing
+        compiler_ctx = psl_compiler_init("psl_module");
+        if (!compiler_ctx) {
+            fprintf(stderr, "Erro: Falha ao inicializar o compilador LLVM\n");
+            YYABORT;
+        }
+    }
+#line 1245 "parser.tab.c"
     break;
 
-  case 23: /* subtitulo_block: SUBTITULO INDENTED_TEXT NEWLINE  */
-#line 94 "parser.y"
-    { printf("## %s\n\n", (yyvsp[-1].str)); }
-#line 1237 "parser.tab.c"
+  case 3: /* document: $@1 blocks  */
+#line 72 "parser.y"
+    {
+        // Finalizar a compilação no final do parsing
+        psl_run_module(compiler_ctx);
+    }
+#line 1254 "parser.tab.c"
     break;
 
-  case 24: /* paragrafo_block: PARAGRAFO indented_lines  */
-#line 99 "parser.y"
+  case 23: /* titulo_block: TITULO INDENTED_TEXT NEWLINE  */
+#line 105 "parser.y"
+    { 
+        printf("# %s\n\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para título
+        if (compiler_ctx) {
+            psl_gen_titulo(compiler_ctx, (yyvsp[-1].str));
+        }
+    }
+#line 1267 "parser.tab.c"
+    break;
+
+  case 24: /* subtitulo_block: SUBTITULO INDENTED_TEXT NEWLINE  */
+#line 117 "parser.y"
+    { 
+        printf("## %s\n\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para subtítulo
+        if (compiler_ctx) {
+            psl_gen_subtitulo(compiler_ctx, (yyvsp[-1].str));
+        }
+    }
+#line 1280 "parser.tab.c"
+    break;
+
+  case 25: /* paragrafo_block: PARAGRAFO indented_lines  */
+#line 129 "parser.y"
     { 
         // Print accumulated paragraph text
         if (paragraph_text) {
             printf("%s\n\n", paragraph_text);
+            
+            // Gerar código LLVM para parágrafo
+            if (compiler_ctx) {
+                psl_gen_paragrafo(compiler_ctx, paragraph_text);
+            }
+            
             free(paragraph_text);
             paragraph_text = NULL;
         }
     }
-#line 1250 "parser.tab.c"
+#line 1299 "parser.tab.c"
     break;
 
-  case 25: /* indented_lines: INDENTED_TEXT NEWLINE  */
-#line 111 "parser.y"
+  case 26: /* indented_lines: INDENTED_TEXT NEWLINE  */
+#line 147 "parser.y"
     { 
         if (paragraph_text) {
             free(paragraph_text);
@@ -1259,11 +1308,11 @@ yyreduce:
         paragraph_text = strdup((yyvsp[-1].str));
         (yyval.str) = paragraph_text;
     }
-#line 1263 "parser.tab.c"
+#line 1312 "parser.tab.c"
     break;
 
-  case 26: /* indented_lines: indented_lines INDENTED_TEXT NEWLINE  */
-#line 120 "parser.y"
+  case 27: /* indented_lines: indented_lines INDENTED_TEXT NEWLINE  */
+#line 156 "parser.y"
     { 
         char *new_text = malloc(strlen(paragraph_text) + strlen((yyvsp[-1].str)) + 2); // +2 for space and null terminator
         sprintf(new_text, "%s %s", paragraph_text, (yyvsp[-1].str));
@@ -1271,107 +1320,216 @@ yyreduce:
         paragraph_text = new_text;
         (yyval.str) = paragraph_text;
     }
-#line 1275 "parser.tab.c"
+#line 1324 "parser.tab.c"
     break;
 
-  case 27: /* lista_block: LISTA lista_items  */
-#line 131 "parser.y"
+  case 28: /* lista_block: LISTA lista_items  */
+#line 167 "parser.y"
     { printf("\n"); }
-#line 1281 "parser.tab.c"
+#line 1330 "parser.tab.c"
     break;
 
-  case 28: /* lista_items: INDENTED_TEXT NEWLINE  */
-#line 136 "parser.y"
-    { printf("- %s\n", (yyvsp[-1].str)); }
-#line 1287 "parser.tab.c"
-    break;
-
-  case 29: /* lista_items: lista_items INDENTED_TEXT NEWLINE  */
-#line 138 "parser.y"
-    { printf("- %s\n", (yyvsp[-1].str)); }
-#line 1293 "parser.tab.c"
-    break;
-
-  case 30: /* $@1: %empty  */
-#line 142 "parser.y"
-             { enum_count = 1; }
-#line 1299 "parser.tab.c"
-    break;
-
-  case 31: /* enumerar_block: ENUMERAR $@1 enumerar_items  */
-#line 143 "parser.y"
-    { printf("\n"); }
-#line 1305 "parser.tab.c"
-    break;
-
-  case 32: /* enumerar_items: INDENTED_TEXT NEWLINE  */
-#line 148 "parser.y"
-    { printf("1. %s\n", (yyvsp[-1].str)); enum_count = 2; }
-#line 1311 "parser.tab.c"
-    break;
-
-  case 33: /* enumerar_items: enumerar_items INDENTED_TEXT NEWLINE  */
-#line 150 "parser.y"
-    { printf("%d. %s\n", enum_count++, (yyvsp[-1].str)); }
-#line 1317 "parser.tab.c"
-    break;
-
-  case 34: /* tarefas_block: TAREFAS tarefas_items  */
-#line 155 "parser.y"
-    { printf("\n"); }
-#line 1323 "parser.tab.c"
-    break;
-
-  case 35: /* tarefas_items: STATUS_S NEWLINE  */
-#line 160 "parser.y"
-    { printf("- [x] %s\n", (yyvsp[-1].str)); }
-#line 1329 "parser.tab.c"
-    break;
-
-  case 36: /* tarefas_items: STATUS_N NEWLINE  */
-#line 162 "parser.y"
-    { printf("- [ ] %s\n", (yyvsp[-1].str)); }
-#line 1335 "parser.tab.c"
-    break;
-
-  case 37: /* tarefas_items: STATUS_SIM NEWLINE  */
-#line 164 "parser.y"
-    { printf("- [x] %s\n", (yyvsp[-1].str)); }
-#line 1341 "parser.tab.c"
-    break;
-
-  case 38: /* tarefas_items: STATUS_NAO NEWLINE  */
-#line 166 "parser.y"
-    { printf("- [ ] %s\n", (yyvsp[-1].str)); }
-#line 1347 "parser.tab.c"
-    break;
-
-  case 39: /* tarefas_items: tarefas_items STATUS_S NEWLINE  */
-#line 168 "parser.y"
-    { printf("- [x] %s\n", (yyvsp[-1].str)); }
-#line 1353 "parser.tab.c"
-    break;
-
-  case 40: /* tarefas_items: tarefas_items STATUS_N NEWLINE  */
-#line 170 "parser.y"
-    { printf("- [ ] %s\n", (yyvsp[-1].str)); }
-#line 1359 "parser.tab.c"
-    break;
-
-  case 41: /* tarefas_items: tarefas_items STATUS_SIM NEWLINE  */
+  case 29: /* lista_items: INDENTED_TEXT NEWLINE  */
 #line 172 "parser.y"
-    { printf("- [x] %s\n", (yyvsp[-1].str)); }
-#line 1365 "parser.tab.c"
+    { 
+        printf("- %s\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para item de lista
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "- %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1345 "parser.tab.c"
     break;
 
-  case 42: /* tarefas_items: tarefas_items STATUS_NAO NEWLINE  */
-#line 174 "parser.y"
-    { printf("- [ ] %s\n", (yyvsp[-1].str)); }
-#line 1371 "parser.tab.c"
+  case 30: /* lista_items: lista_items INDENTED_TEXT NEWLINE  */
+#line 183 "parser.y"
+    { 
+        printf("- %s\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para item de lista
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "- %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1360 "parser.tab.c"
     break;
 
-  case 43: /* $@2: %empty  */
-#line 179 "parser.y"
+  case 31: /* $@2: %empty  */
+#line 196 "parser.y"
+             { enum_count = 1; }
+#line 1366 "parser.tab.c"
+    break;
+
+  case 32: /* enumerar_block: ENUMERAR $@2 enumerar_items  */
+#line 197 "parser.y"
+    { printf("\n"); }
+#line 1372 "parser.tab.c"
+    break;
+
+  case 33: /* enumerar_items: INDENTED_TEXT NEWLINE  */
+#line 202 "parser.y"
+    { 
+        printf("1. %s\n", (yyvsp[-1].str));
+        enum_count = 2;
+        
+        // Gerar código LLVM para item enumerado
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "1. %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1388 "parser.tab.c"
+    break;
+
+  case 34: /* enumerar_items: enumerar_items INDENTED_TEXT NEWLINE  */
+#line 214 "parser.y"
+    { 
+        printf("%d. %s\n", enum_count++, (yyvsp[-1].str));
+        
+        // Gerar código LLVM para item enumerado
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "%d. %s", enum_count-1, (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1403 "parser.tab.c"
+    break;
+
+  case 35: /* tarefas_block: TAREFAS tarefas_items  */
+#line 228 "parser.y"
+    { printf("\n"); }
+#line 1409 "parser.tab.c"
+    break;
+
+  case 36: /* tarefas_items: STATUS_S NEWLINE  */
+#line 233 "parser.y"
+    { 
+        printf("- [x] %s\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para tarefa concluída
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "- [x] %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1424 "parser.tab.c"
+    break;
+
+  case 37: /* tarefas_items: STATUS_N NEWLINE  */
+#line 244 "parser.y"
+    { 
+        printf("- [ ] %s\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para tarefa pendente
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "- [ ] %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1439 "parser.tab.c"
+    break;
+
+  case 38: /* tarefas_items: STATUS_SIM NEWLINE  */
+#line 255 "parser.y"
+    { 
+        printf("- [x] %s\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para tarefa concluída
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "- [x] %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1454 "parser.tab.c"
+    break;
+
+  case 39: /* tarefas_items: STATUS_NAO NEWLINE  */
+#line 266 "parser.y"
+    { 
+        printf("- [ ] %s\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para tarefa pendente
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "- [ ] %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1469 "parser.tab.c"
+    break;
+
+  case 40: /* tarefas_items: tarefas_items STATUS_S NEWLINE  */
+#line 277 "parser.y"
+    { 
+        printf("- [x] %s\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para tarefa concluída
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "- [x] %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1484 "parser.tab.c"
+    break;
+
+  case 41: /* tarefas_items: tarefas_items STATUS_N NEWLINE  */
+#line 288 "parser.y"
+    { 
+        printf("- [ ] %s\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para tarefa pendente
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "- [ ] %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1499 "parser.tab.c"
+    break;
+
+  case 42: /* tarefas_items: tarefas_items STATUS_SIM NEWLINE  */
+#line 299 "parser.y"
+    { 
+        printf("- [x] %s\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para tarefa concluída
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "- [x] %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1514 "parser.tab.c"
+    break;
+
+  case 43: /* tarefas_items: tarefas_items STATUS_NAO NEWLINE  */
+#line 310 "parser.y"
+    { 
+        printf("- [ ] %s\n", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para tarefa pendente
+        if (compiler_ctx) {
+            char format[256];
+            sprintf(format, "- [ ] %s", (yyvsp[-1].str));
+            psl_gen_paragrafo(compiler_ctx, format);
+        }
+    }
+#line 1529 "parser.tab.c"
+    break;
+
+  case 44: /* $@3: %empty  */
+#line 324 "parser.y"
     { 
         // Reset code block state
         code_line_count = 0;
@@ -1386,123 +1544,176 @@ yyreduce:
             }
         }
     }
-#line 1390 "parser.tab.c"
+#line 1548 "parser.tab.c"
     break;
 
-  case 44: /* codigo_block: CODIGO $@2 codigo_content  */
-#line 194 "parser.y"
+  case 45: /* codigo_block: CODIGO $@3 codigo_content  */
+#line 339 "parser.y"
     { 
         // Print the code block with proper formatting
         printf("```%s\n", code_lang);
         for (int i = 0; i < code_line_count; i++) {
             printf("%s\n", code_lines[i]);
-            free(code_lines[i]);
-            code_lines[i] = NULL;
         }
         printf("```\n\n");
+        
+        // Gerar código LLVM para bloco de código
+        if (compiler_ctx) {
+            char* full_code = (char*)malloc(1024);
+            strcpy(full_code, "```");
+            strcat(full_code, code_lang);
+            strcat(full_code, "\n");
+            
+            for (int i = 0; i < code_line_count; i++) {
+                strcat(full_code, code_lines[i]);
+                strcat(full_code, "\n");
+                free(code_lines[i]);
+                code_lines[i] = NULL;
+            }
+            
+            strcat(full_code, "```");
+            psl_gen_paragrafo(compiler_ctx, full_code);
+            free(full_code);
+        }
+        
         code_line_count = 0;
     }
-#line 1406 "parser.tab.c"
+#line 1582 "parser.tab.c"
     break;
 
-  case 46: /* codigo_lines: INDENTED_TEXT NEWLINE  */
-#line 213 "parser.y"
+  case 47: /* codigo_lines: INDENTED_TEXT NEWLINE  */
+#line 376 "parser.y"
     { 
         // Store code line
         code_lines[code_line_count++] = strdup((yyvsp[-1].str));
     }
-#line 1415 "parser.tab.c"
+#line 1591 "parser.tab.c"
     break;
 
-  case 47: /* codigo_lines: codigo_lines INDENTED_TEXT NEWLINE  */
-#line 218 "parser.y"
+  case 48: /* codigo_lines: codigo_lines INDENTED_TEXT NEWLINE  */
+#line 381 "parser.y"
     { 
         // Store additional code line
         code_lines[code_line_count++] = strdup((yyvsp[-1].str));
     }
-#line 1424 "parser.tab.c"
+#line 1600 "parser.tab.c"
     break;
 
-  case 49: /* alt_line: ALT NEWLINE  */
-#line 230 "parser.y"
+  case 50: /* alt_line: ALT NEWLINE  */
+#line 393 "parser.y"
     { 
         if (saved_alt_text) free(saved_alt_text);
         saved_alt_text = strdup((yyvsp[-1].str));
     }
-#line 1433 "parser.tab.c"
+#line 1609 "parser.tab.c"
     break;
 
-  case 50: /* src_line: SRC NEWLINE  */
-#line 238 "parser.y"
+  case 51: /* src_line: SRC NEWLINE  */
+#line 401 "parser.y"
     { 
         printf("![%s](%s)\n\n", saved_alt_text ? saved_alt_text : "", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para imagem
+        if (compiler_ctx && saved_alt_text) {
+            psl_gen_imagem(compiler_ctx, saved_alt_text, (yyvsp[-1].str));
+        }
+        
         if (saved_alt_text) {
             free(saved_alt_text);
             saved_alt_text = NULL;
         }
     }
-#line 1445 "parser.tab.c"
+#line 1627 "parser.tab.c"
     break;
 
-  case 52: /* texto_line: TEXTO NEWLINE  */
-#line 253 "parser.y"
+  case 53: /* texto_line: TEXTO NEWLINE  */
+#line 422 "parser.y"
     {
         if (link_text) free(link_text);
         link_text = strdup((yyvsp[-1].str));
     }
-#line 1454 "parser.tab.c"
+#line 1636 "parser.tab.c"
     break;
 
-  case 53: /* url_line: URL NEWLINE  */
-#line 261 "parser.y"
+  case 54: /* url_line: URL NEWLINE  */
+#line 430 "parser.y"
     {
         printf("[%s](%s)\n\n", link_text ? link_text : "", (yyvsp[-1].str));
+        
+        // Gerar código LLVM para link
+        if (compiler_ctx && link_text) {
+            psl_gen_link(compiler_ctx, link_text, (yyvsp[-1].str));
+        }
+        
         if (link_text) {
             free(link_text);
             link_text = NULL;
         }
     }
-#line 1466 "parser.tab.c"
+#line 1654 "parser.tab.c"
     break;
 
-  case 54: /* nota_block: NOTA indented_lines  */
-#line 272 "parser.y"
+  case 55: /* nota_block: NOTA indented_lines  */
+#line 447 "parser.y"
     {
         if (paragraph_text) {
             printf("> *Note:* %s\n\n", paragraph_text);
+            
+            // Gerar código LLVM para nota
+            if (compiler_ctx) {
+                char format[1024];
+                sprintf(format, "> *Note:* %s", paragraph_text);
+                psl_gen_paragrafo(compiler_ctx, format);
+            }
+            
             free(paragraph_text);
             paragraph_text = NULL;
         }
     }
-#line 1478 "parser.tab.c"
+#line 1674 "parser.tab.c"
     break;
 
-  case 55: /* citacao_block: CITACAO indented_lines  */
-#line 283 "parser.y"
+  case 56: /* citacao_block: CITACAO indented_lines  */
+#line 466 "parser.y"
     {
         if (paragraph_text) {
             printf("> %s\n\n", paragraph_text);
+            
+            // Gerar código LLVM para citação
+            if (compiler_ctx) {
+                char format[1024];
+                sprintf(format, "> %s", paragraph_text);
+                psl_gen_paragrafo(compiler_ctx, format);
+            }
+            
             free(paragraph_text);
             paragraph_text = NULL;
         }
     }
-#line 1490 "parser.tab.c"
+#line 1694 "parser.tab.c"
     break;
 
-  case 56: /* divisor_block: DIVISOR NEWLINE  */
-#line 294 "parser.y"
-    { printf("---\n\n"); }
-#line 1496 "parser.tab.c"
+  case 57: /* divisor_block: DIVISOR NEWLINE  */
+#line 485 "parser.y"
+    { 
+        printf("---\n\n");
+        
+        // Gerar código LLVM para divisor
+        if (compiler_ctx) {
+            psl_gen_divisor(compiler_ctx);
+        }
+    }
+#line 1707 "parser.tab.c"
     break;
 
-  case 57: /* tabela_block: TABELA cabecalho_line tabela_rows  */
-#line 299 "parser.y"
+  case 58: /* tabela_block: TABELA cabecalho_line tabela_rows  */
+#line 497 "parser.y"
     { printf("\n"); }
-#line 1502 "parser.tab.c"
+#line 1713 "parser.tab.c"
     break;
 
-  case 58: /* cabecalho_line: CABECALHO NEWLINE  */
-#line 304 "parser.y"
+  case 59: /* cabecalho_line: CABECALHO NEWLINE  */
+#line 502 "parser.y"
     {
         char *s = strdup((yyvsp[-1].str));
         char *token, *saveptr;
@@ -1526,12 +1737,17 @@ yyreduce:
         }
         printf("\n");
         free(s);
+        
+        // Para LLVM, vamos gerar uma versão simplificada da tabela
+        if (compiler_ctx) {
+            psl_gen_paragrafo(compiler_ctx, "Tabela: (tabelas são renderizadas no markdown)");
+        }
     }
-#line 1531 "parser.tab.c"
+#line 1747 "parser.tab.c"
     break;
 
-  case 59: /* tabela_rows: INDENTED_TEXT NEWLINE  */
-#line 332 "parser.y"
+  case 60: /* tabela_rows: INDENTED_TEXT NEWLINE  */
+#line 535 "parser.y"
     {
         char *s = strdup((yyvsp[-1].str));
         char *token, *saveptr;
@@ -1546,11 +1762,11 @@ yyreduce:
         printf("\n");
         free(s);
     }
-#line 1550 "parser.tab.c"
+#line 1766 "parser.tab.c"
     break;
 
-  case 60: /* tabela_rows: tabela_rows INDENTED_TEXT NEWLINE  */
-#line 347 "parser.y"
+  case 61: /* tabela_rows: tabela_rows INDENTED_TEXT NEWLINE  */
+#line 550 "parser.y"
     {
         char *s = strdup((yyvsp[-1].str));
         char *token, *saveptr;
@@ -1565,11 +1781,11 @@ yyreduce:
         printf("\n");
         free(s);
     }
-#line 1569 "parser.tab.c"
+#line 1785 "parser.tab.c"
     break;
 
-  case 61: /* tabela_rows: tabela_rows INDENTED_TEXT  */
-#line 362 "parser.y"
+  case 62: /* tabela_rows: tabela_rows INDENTED_TEXT  */
+#line 565 "parser.y"
     {
         char *s = strdup((yyvsp[0].str));
         char *token, *saveptr;
@@ -1584,29 +1800,61 @@ yyreduce:
         printf("\n");
         free(s);
     }
-#line 1588 "parser.tab.c"
+#line 1804 "parser.tab.c"
     break;
 
-  case 62: /* se_block: SE  */
-#line 380 "parser.y"
+  case 63: /* $@4: %empty  */
+#line 583 "parser.y"
     {
-        // Just output a comment for the conditional block
         printf("<!-- Conditional block (simplified) -->\n\n");
+        
+        // Iniciar a estrutura condicional
+        if (compiler_ctx) {
+            psl_gen_if_start(compiler_ctx, "nome", 1, "valor");
+            psl_gen_if_then(compiler_ctx);
+        }
     }
-#line 1597 "parser.tab.c"
+#line 1818 "parser.tab.c"
     break;
 
-  case 63: /* repetir_block: REPETIR  */
-#line 388 "parser.y"
+  case 64: /* se_block: SE $@4 block  */
+#line 593 "parser.y"
     {
-        // Just output a comment for the repeat block
-        printf("<!-- Repeat block %d times (simplified) -->\n\n", (yyvsp[0].num));
+        // Finalizar a estrutura condicional
+        if (compiler_ctx) {
+            psl_gen_if_end(compiler_ctx);
+        }
     }
-#line 1606 "parser.tab.c"
+#line 1829 "parser.tab.c"
+    break;
+
+  case 65: /* $@5: %empty  */
+#line 603 "parser.y"
+    {
+        printf("<!-- Repeat block %d times (simplified) -->\n\n", (yyvsp[0].num));
+        
+        // Iniciar a estrutura de repetição
+        if (compiler_ctx) {
+            psl_gen_loop_start(compiler_ctx, (yyvsp[0].num));
+            psl_gen_loop_body(compiler_ctx);
+        }
+    }
+#line 1843 "parser.tab.c"
+    break;
+
+  case 66: /* repetir_block: REPETIR $@5 block  */
+#line 613 "parser.y"
+    {
+        // Finalizar a estrutura de repetição
+        if (compiler_ctx) {
+            psl_gen_loop_end(compiler_ctx);
+        }
+    }
+#line 1854 "parser.tab.c"
     break;
 
 
-#line 1610 "parser.tab.c"
+#line 1858 "parser.tab.c"
 
       default: break;
     }
@@ -1799,9 +2047,32 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 394 "parser.y"
+#line 621 "parser.y"
 
 
 void yyerror(const char *s) {
     fprintf(stderr, "Erro: %s na linha %d\n", s, yylineno);
+}
+
+// Adicionar função para inicializar o parser com o contexto do compilador
+int parse_psl_file(const char* filename, void* ctx) {
+    FILE* file = fopen(filename, "r");
+    if (!file) {
+        fprintf(stderr, "Erro: Não foi possível abrir o arquivo %s\n", filename);
+        return 1;
+    }
+    
+    // Configurar o contexto do compilador
+    compiler_ctx = (PSLCompilerContext*)ctx;
+    
+    // Configurar o lexer
+    yyin = file;
+    
+    // Executar o parser
+    int result = yyparse();
+    
+    // Limpar
+    fclose(file);
+    
+    return result;
 }
