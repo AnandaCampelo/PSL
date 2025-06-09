@@ -1,38 +1,51 @@
 titulo
-    Exemplo de Documento PSL
+    Relatório Final
 
 subtitulo
-    Demonstração de Funcionalidades
+    Visão Geral
 
 paragrafo
-    Este é um exemplo de documento PSL que será convertido
-    para Markdown.
-
-lista
-    Item 1 da lista
-    Item 2 da lista
-    Item 3 da lista
-
-enumerar
-    Primeiro passo
-    Segundo passo
-    Terceiro passo
-
-tarefas
-    s Tarefa concluída
-    n Tarefa pendente
-
-codigo python
-    def hello():
-        print("Hello, World!")
-
-imagem
-    alt Logo Python
-    src python.png
+    Este relatório descreve os resultados
+    obtidos ao longo do experimento.
 
 divisor
 
-tabela
-    cabecalho Nome, Idade, Cidade
-    João, 30, São Paulo
-    Maria, 25, Rio de Janeiro
+lista
+    Introdução
+    Metodologia
+    Conclusão
+
+divisor
+
+enumerar
+    Passo 1: Coletar dados
+    Passo 2: Analisar resultados
+    Passo 3: Gerar gráficos
+
+divisor
+
+tarefas
+    s Corrigir erros
+    n Adicionar conclusão
+    sim Revisar gráficos
+    não Validar tabela
+
+divisor
+
+codigo python
+    for i in range(3):
+        print(i)
+
+imagem
+    alt Logo do Projeto
+    src imagens/logo.png
+
+link
+    texto Repositório do Projeto
+    url https://github.com/exemplo
+
+nota
+    Este é um comentário importante.
+
+divisor
+

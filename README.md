@@ -27,66 +27,71 @@ PROGRAMA       = { BLOCO } ;
 BLOCO          = COMANDO_MARCA | COMANDO_PROG ;
 
 COMANDO_MARCA  = TITULO | SUBTITULO | PARAGRAFO | LISTA | ENUMERAR |
-                 CODIGO_BLOCO | IMAGEM | LINK | CITAÇÃO |
-                 CHECKBOXES | TABELA | DIVISOR | NOTA ;
+                 CODIGO_BLOCO | IMAGEM | LINK | CITACAO |
+                 TAREFAS | TABELA | DIVISOR | NOTA ;
 
 COMANDO_PROG   = IF | LOOP ;
 
-TITULO         = "titulo", NOVA_LINHA, INDENT, TEXTO ;
-SUBTITULO      = "subtitulo", NOVA_LINHA, INDENT, TEXTO ;
-PARAGRAFO      = "paragrafo", NOVA_LINHA, { INDENT, TEXTO, NOVA_LINHA } ;
+TITULO         = "titulo", NOVA_LINHA, TEXTO_INDENTADO ;
+SUBTITULO      = "subtitulo", NOVA_LINHA, TEXTO_INDENTADO ;
+PARAGRAFO      = "paragrafo", NOVA_LINHA, { TEXTO_INDENTADO } ;
 
-LISTA          = "lista", NOVA_LINHA, { INDENT, TEXTO, NOVA_LINHA } ;
-ENUMERAR       = "enumerar", NOVA_LINHA, { INDENT, TEXTO, NOVA_LINHA } ;
+LISTA          = "lista", NOVA_LINHA, { TEXTO_INDENTADO } ;
+ENUMERAR       = "enumerar", NOVA_LINHA, { TEXTO_INDENTADO } ;
 
-CHECKBOXES     = "tarefas", NOVA_LINHA, { INDENT, STATUS, TEXTO, NOVA_LINHA } ;
-STATUS         = "s" | "n" | "sim" | "não" ;
+TAREFAS        = "tarefas", NOVA_LINHA, { STATUS_ITEM } ;
+STATUS_ITEM    = INDENT, ("s" | "n" | "sim" | "não"), ESPACO, TEXTO, NOVA_LINHA ;
 
-CODIGO_BLOCO   = "codigo", [LINGUAGEM], NOVA_LINHA,
-                 { INDENT, LINHA_CODIGO }, SEPARADOR ;
+CODIGO_BLOCO   = "codigo", ESPACO, LINGUAGEM, NOVA_LINHA,
+                 { TEXTO_INDENTADO } ;
 
 IMAGEM         = "imagem", NOVA_LINHA,
-                 INDENT, "alt", TEXTO, NOVA_LINHA,
-                 INDENT, "src", TEXTO ;
+                 INDENT, "alt", ESPACO, TEXTO, NOVA_LINHA,
+                 INDENT, "src", ESPACO, TEXTO, NOVA_LINHA ;
 
 LINK           = "link", NOVA_LINHA,
-                 INDENT, "texto", TEXTO, NOVA_LINHA,
-                 INDENT, "url", TEXTO ;
+                 INDENT, "texto", ESPACO, TEXTO, NOVA_LINHA,
+                 INDENT, "url", ESPACO, TEXTO, NOVA_LINHA ;
 
-CITAÇÃO        = "citacao", NOVA_LINHA, INDENT, TEXTO ;
-NOTA           = "nota", NOVA_LINHA, INDENT, TEXTO ;
-DIVISOR        = "divisor" ;
+CITACAO        = "citacao", NOVA_LINHA, TEXTO_INDENTADO ;
+NOTA           = "nota", NOVA_LINHA, TEXTO_INDENTADO ;
+DIVISOR        = "divisor", NOVA_LINHA ;
 
 TABELA         = "tabela", NOVA_LINHA,
-                 INDENT, "cabecalho", CABECALHO, NOVA_LINHA,
-                 { INDENT, LINHA_TABELA } ;
+                 INDENT, "cabecalho", ESPACO, CABECALHO, NOVA_LINHA,
+                 { TEXTO_INDENTADO } ;
 
 CABECALHO      = TEXTO , { "," , TEXTO } ;
 LINHA_TABELA   = TEXTO , { "," , TEXTO } ;
 
-IF             = "se", IDENT, OP_REL, TEXTO, NOVA_LINHA,
+IF             = "se", ESPACO, VARIAVEL, ESPACO, OP_REL, ESPACO, VALOR, NOVA_LINHA,
                  INDENT, "entao", NOVA_LINHA,
-                 { INDENT2, BLOCO },
+                 BLOCO_INDENTADO,
                  [ INDENT, "senao", NOVA_LINHA,
-                   { INDENT2, BLOCO } ] ;
+                   BLOCO_INDENTADO ] ;
 
-LOOP           = "repetir", NUMERO, "vezes", NOVA_LINHA,
-                 { INDENT, BLOCO } ;
+LOOP           = "repetir", ESPACO, NUMERO, ESPACO, "vezes", NOVA_LINHA,
+                 BLOCO_INDENTADO ;
 
 OP_REL         = "igual" | "diferente" | "maior" | "menor" | "maior_igual" | "menor_igual" ;
 
+VARIAVEL       = IDENT ;
+VALOR          = TEXTO ;
 LINGUAGEM      = IDENT ;
-LINHA_CODIGO   = TEXTO ;
+
+TEXTO_INDENTADO = INDENT, TEXTO, NOVA_LINHA ;
+BLOCO_INDENTADO = { INDENT, BLOCO } ;
 
 TEXTO          = { CHAR } ;
 CHAR           = ? qualquer caractere visível (exceto \n) ? ;
-IDENT          = letra , { letra | digito } ;
-NUMERO         = digito , { digito } ;
+IDENT          = LETRA , { LETRA | DIGITO } ;
+NUMERO         = DIGITO , { DIGITO } ;
+LETRA          = "a" | "b" | ... | "z" | "A" | "B" | ... | "Z" ;
+DIGITO         = "0" | "1" | ... | "9" ;
 
-INDENT         = ? um nível de indentação ? ;
-INDENT2        = ? dois níveis de indentação ? ;
+INDENT         = "    " ; /* 4 espaços */
+ESPACO         = " ", { " " } ; /* Um ou mais espaços */
 NOVA_LINHA     = "\n" ;
-SEPARADOR      = (palavra-chave não indentada, ou EOF) ;
 ```
 
 ---
@@ -104,21 +109,29 @@ paragrafo
     Este relatório descreve os resultados
     obtidos ao longo do experimento.
 
+divisor
+
 lista
     Introdução
     Metodologia
     Conclusão
+
+divisor
 
 enumerar
     Passo 1: Coletar dados
     Passo 2: Analisar resultados
     Passo 3: Gerar gráficos
 
+divisor
+
 tarefas
     s Corrigir erros
     n Adicionar conclusão
     sim Revisar gráficos
     não Validar tabela
+
+divisor
 
 codigo python
     for i in range(3):
@@ -137,18 +150,6 @@ nota
 
 divisor
 
-se nome igual Ana
-    entao
-        paragrafo
-            Bem-vinda, Ana!
-    senao
-        paragrafo
-            Usuário desconhecido.
-
-repetir 2 vezes
-    enumerar
-        Execução de teste
-        Validação dos dados
 ```
 
 ---

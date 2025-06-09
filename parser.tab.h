@@ -55,23 +55,34 @@ extern int yydebug;
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
     INDENTED_TEXT = 258,           /* INDENTED_TEXT  */
-    TEXT_LINE = 259,               /* TEXT_LINE  */
-    CODIGO = 260,                  /* CODIGO  */
-    CABECALHO = 261,               /* CABECALHO  */
-    ALT = 262,                     /* ALT  */
-    SRC = 263,                     /* SRC  */
-    STATUS_S = 264,                /* STATUS_S  */
-    STATUS_N = 265,                /* STATUS_N  */
-    TITULO = 266,                  /* TITULO  */
-    SUBTITULO = 267,               /* SUBTITULO  */
-    PARAGRAFO = 268,               /* PARAGRAFO  */
-    LISTA = 269,                   /* LISTA  */
-    ENUMERAR = 270,                /* ENUMERAR  */
-    TAREFAS = 271,                 /* TAREFAS  */
-    IMAGEM = 272,                  /* IMAGEM  */
-    DIVISOR = 273,                 /* DIVISOR  */
-    TABELA = 274,                  /* TABELA  */
-    NEWLINE = 275                  /* NEWLINE  */
+    CODIGO = 259,                  /* CODIGO  */
+    CABECALHO = 260,               /* CABECALHO  */
+    ALT = 261,                     /* ALT  */
+    SRC = 262,                     /* SRC  */
+    STATUS_S = 263,                /* STATUS_S  */
+    STATUS_N = 264,                /* STATUS_N  */
+    TEXTO = 265,                   /* TEXTO  */
+    URL = 266,                     /* URL  */
+    STATUS_SIM = 267,              /* STATUS_SIM  */
+    STATUS_NAO = 268,              /* STATUS_NAO  */
+    REPETIR = 269,                 /* REPETIR  */
+    OP_REL = 270,                  /* OP_REL  */
+    TITULO = 271,                  /* TITULO  */
+    SUBTITULO = 272,               /* SUBTITULO  */
+    PARAGRAFO = 273,               /* PARAGRAFO  */
+    LISTA = 274,                   /* LISTA  */
+    ENUMERAR = 275,                /* ENUMERAR  */
+    TAREFAS = 276,                 /* TAREFAS  */
+    IMAGEM = 277,                  /* IMAGEM  */
+    DIVISOR = 278,                 /* DIVISOR  */
+    TABELA = 279,                  /* TABELA  */
+    LINK = 280,                    /* LINK  */
+    NOTA = 281,                    /* NOTA  */
+    CITACAO = 282,                 /* CITACAO  */
+    ENTAO = 283,                   /* ENTAO  */
+    SENAO = 284,                   /* SENAO  */
+    NEWLINE = 285,                 /* NEWLINE  */
+    SE = 286                       /* SE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -80,11 +91,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 50 "parser.y"
+#line 38 "parser.y"
 
     char *str;
+    int num;
+    int op;  // Changed from op_type to int for compatibility
 
-#line 88 "parser.tab.h"
+#line 101 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

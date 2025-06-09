@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "common.h"
 
 extern FILE *yyin;
 int yyparse(void);

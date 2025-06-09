@@ -1,12 +1,13 @@
 %{
 #include "parser.tab.h"
+#include "common.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // Debug function
 void debug_token(const char* name, const char* value) {
-    // Uncomment for verbose debugging
-    // fprintf(stderr, "TOKEN: %s = '%s'\n", name, value);
+    fprintf(stderr, "TOKEN: %s = '%s'\n", name, value);
 }
 %}
 
@@ -21,6 +22,7 @@ void debug_token(const char* name, const char* value) {
 ^lista[ \t]*\n                   { debug_token("LISTA", yytext); return LISTA; }
 ^enumerar[ \t]*\n                { debug_token("ENUMERAR", yytext); return ENUMERAR; }
 ^tarefas[ \t]*\n                 { debug_token("TAREFAS", yytext); return TAREFAS; }
+^citacao[ \t]*\n                 { debug_token("CITACAO", yytext); return CITACAO; }
 ^codigo[ \t]+([a-zA-Z0-9]+)[ \t]*\n   { 
                                     yylval.str = strdup(yytext + 7); 
                                     // Remove "codigo " prefix and trailing whitespace/newline
@@ -29,8 +31,62 @@ void debug_token(const char* name, const char* value) {
                                     return CODIGO; 
                                   }
 ^imagem[ \t]*\n                  { debug_token("IMAGEM", yytext); return IMAGEM; }
+^link[ \t]*\n                    { debug_token("LINK", yytext); return LINK; }
+^nota[ \t]*\n                    { debug_token("NOTA", yytext); return NOTA; }
 ^divisor[ \t]*\n                 { debug_token("DIVISOR", yytext); return DIVISOR; }
 ^tabela[ \t]*\n                  { debug_token("TABELA", yytext); return TABELA; }
+
+^se[ \t]+[^\n]*\n                { debug_token("SE", yytext); return SE; }
+^entao[ \t]*\n                   { debug_token("ENTAO", yytext); return ENTAO; }
+^senao[ \t]*\n                   { debug_token("SENAO", yytext); return SENAO; }
+
+^repetir[ \t]+([0-9]+)[ \t]+vezes[ \t]*\n { 
+                                    char *temp = strdup(yytext + 8); // Skip "repetir "
+                                    char *end = strstr(temp, " vezes");
+                                    if (end) *end = '\0';
+                                    yylval.num = atoi(temp);
+                                    free(temp);
+                                    debug_token("REPETIR", yytext);
+                                    return REPETIR; 
+                                  }
+
+^[ \t]*texto[ \t]+([^\n]*)       { 
+                                    char *temp = strdup(yytext);
+                                    char *start = temp;
+                                    
+                                    // Skip initial whitespace
+                                    while(*start && (*start == ' ' || *start == '\t')) start++;
+                                    
+                                    // Skip "texto"
+                                    start += 5;
+                                    
+                                    // Skip whitespace after "texto"
+                                    while(*start && (*start == ' ' || *start == '\t')) start++;
+                                    
+                                    yylval.str = strdup(start);
+                                    free(temp);
+                                    debug_token("TEXTO", yylval.str);
+                                    return TEXTO; 
+                                  }
+
+^[ \t]*url[ \t]+([^\n]*)         { 
+                                    char *temp = strdup(yytext);
+                                    char *start = temp;
+                                    
+                                    // Skip initial whitespace
+                                    while(*start && (*start == ' ' || *start == '\t')) start++;
+                                    
+                                    // Skip "url"
+                                    start += 3;
+                                    
+                                    // Skip whitespace after "url"
+                                    while(*start && (*start == ' ' || *start == '\t')) start++;
+                                    
+                                    yylval.str = strdup(start);
+                                    free(temp);
+                                    debug_token("URL", yylval.str);
+                                    return URL; 
+                                  }
 
 ^[ \t]*cabecalho[ \t]+([^\n]*)   { 
                                     char *temp = strdup(yytext);
@@ -127,6 +183,44 @@ void debug_token(const char* name, const char* value) {
                                     return STATUS_N; 
                                   }
 
+^[ \t]*sim[ \t]+([^\n]*)         { 
+                                    char *temp = strdup(yytext);
+                                    char *start = temp;
+                                    
+                                    // Skip initial whitespace
+                                    while(*start && (*start == ' ' || *start == '\t')) start++;
+                                    
+                                    // Skip "sim"
+                                    start += 3;
+                                    
+                                    // Skip whitespace after "sim"
+                                    while(*start && (*start == ' ' || *start == '\t')) start++;
+                                    
+                                    yylval.str = strdup(start);
+                                    free(temp);
+                                    debug_token("STATUS_SIM", yylval.str);
+                                    return STATUS_SIM; 
+                                  }
+
+^[ \t]*não[ \t]+([^\n]*)         { 
+                                    char *temp = strdup(yytext);
+                                    char *start = temp;
+                                    
+                                    // Skip initial whitespace
+                                    while(*start && (*start == ' ' || *start == '\t')) start++;
+                                    
+                                    // Skip "não"
+                                    start += 3;
+                                    
+                                    // Skip whitespace after "não"
+                                    while(*start && (*start == ' ' || *start == '\t')) start++;
+                                    
+                                    yylval.str = strdup(start);
+                                    free(temp);
+                                    debug_token("STATUS_NAO", yylval.str);
+                                    return STATUS_NAO; 
+                                  }
+
 ^[ ]{4}([^\n]*)                  { 
                                     yylval.str = strdup(yytext + 4); // Skip 4 spaces
                                     debug_token("INDENTED_TEXT", yylval.str);
@@ -139,5 +233,7 @@ void debug_token(const char* name, const char* value) {
 
 [ \t]+                           { /* ignore whitespace */ }
 .                                { /* ignore other characters */ }
+
+<<EOF>>                          { debug_token("EOF", "end of file"); return 0; }
 
 %%
