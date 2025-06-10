@@ -61,8 +61,6 @@ COMANDO_MARCA  = TITULO | SUBTITULO | PARAGRAFO | LISTA | ENUMERAR |
                  CODIGO_BLOCO | IMAGEM | LINK | CITACAO |
                  TAREFAS | TABELA | DIVISOR | NOTA ;
 
-COMANDO_PROG   = IF | LOOP ;
-
 TITULO         = "titulo", NOVA_LINHA, TEXTO_INDENTADO ;
 SUBTITULO      = "subtitulo", NOVA_LINHA, TEXTO_INDENTADO ;
 PARAGRAFO      = "paragrafo", NOVA_LINHA, { TEXTO_INDENTADO } ;
@@ -94,21 +92,6 @@ TABELA         = "tabela", NOVA_LINHA,
 
 CABECALHO      = TEXTO , { "," , TEXTO } ;
 LINHA_TABELA   = TEXTO , { "," , TEXTO } ;
-
-IF             = "se", ESPACO, VARIAVEL, ESPACO, OP_REL, ESPACO, VALOR, NOVA_LINHA,
-                 INDENT, "entao", NOVA_LINHA,
-                 BLOCO_INDENTADO,
-                 [ INDENT, "senao", NOVA_LINHA,
-                   BLOCO_INDENTADO ] ;
-
-LOOP           = "repetir", ESPACO, NUMERO, ESPACO, "vezes", NOVA_LINHA,
-                 BLOCO_INDENTADO ;
-
-OP_REL         = "igual" | "diferente" | "maior" | "menor" | "maior_igual" | "menor_igual" ;
-
-VARIAVEL       = IDENT ;
-VALOR          = TEXTO ;
-LINGUAGEM      = IDENT ;
 
 TEXTO_INDENTADO = INDENT, TEXTO, NOVA_LINHA ;
 BLOCO_INDENTADO = { INDENT, BLOCO } ;
