@@ -1,0 +1,135 @@
+titulo
+    Demonstração da Linguagem PSL
+
+subtitulo
+    Uma linguagem para geração de documentos Markdown
+
+paragrafo
+    Este documento demonstra todas as funcionalidades da linguagem PSL
+    (Presentation Script Language). PSL é uma linguagem de marcação simples
+    que compila para Markdown usando LLVM como infraestrutura.
+
+divisor
+
+subtitulo
+    1. Elementos Básicos de Texto
+
+paragrafo
+    A PSL suporta diferentes níveis de títulos e parágrafos de texto.
+    O texto pode ser formatado em múltiplas linhas e será renderizado
+    como um parágrafo contínuo no Markdown.
+
+subtitulo
+    2. Listas
+
+paragrafo
+    PSL suporta listas não ordenadas:
+
+lista
+    Maçãs
+    Bananas
+    Laranjas
+    Uvas
+
+paragrafo
+    E também listas ordenadas (enumeradas):
+
+enumerar
+    Primeiro passo: planejamento
+    Segundo passo: desenvolvimento
+    Terceiro passo: testes
+    Quarto passo: implantação
+
+divisor
+
+subtitulo
+    3. Listas de Tarefas
+
+paragrafo
+    Você pode criar listas de tarefas com status:
+
+tarefas
+    s Tarefa já concluída
+    n Tarefa pendente
+    sim Esta também está concluída
+    não Esta ainda precisa ser feita
+
+divisor
+
+subtitulo
+    4. Blocos de Código
+
+paragrafo
+    PSL permite incluir blocos de código com syntax highlighting:
+
+codigo python
+    # Exemplo de código Python
+    def hello_world():
+        print("Hello, PSL!")
+        
+    for i in range(3):
+        print(f"Contagem: {i}")
+
+codigo javascript
+    // Exemplo de código JavaScript
+    function calculateSum(a, b) {
+        return a + b;
+    }
+    
+    console.log("A soma é:", calculateSum(5, 7));
+
+divisor
+
+subtitulo
+    5. Imagens e Links
+
+paragrafo
+    PSL facilita a inclusão de imagens:
+
+imagem
+    alt Uma imagem, wow!
+    src image.png
+
+paragrafo
+    E links para recursos externos:
+
+link
+    texto GitHub da PSL!
+    url https://github.com/AnandaCampelo/PSL
+
+divisor
+
+subtitulo
+    6. Notas e Comentários
+
+paragrafo
+    Você pode adicionar notas de destaque:
+
+nota
+    Esta é uma nota importante sobre a linguagem PSL.
+    Ela será formatada como um bloco de destaque no Markdown.
+
+paragrafo
+    A PSL também suporta comentários no código fonte que não
+    aparecem na saída Markdown final.
+
+divisor
+
+subtitulo
+    Conclusão
+
+paragrafo
+    A PSL é uma linguagem simples mas poderosa para criar
+    documentos Markdown estruturados. Seu compilador baseado
+    em LLVM traduz a sintaxe PSL para Markdown de forma eficiente.
+
+paragrafo
+    Este documento de teste demonstra todas as funcionalidades
+    principais da linguagem.
+
+divisor
+
+nota
+    Desenvolvido como projeto para a matéria de Lógica da Computação.
+    Junho de 2025.
+
