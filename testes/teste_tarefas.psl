@@ -1,0 +1,14 @@
+// Teste de listas de tarefas em PSL
+
+titulo
+    Teste de Listas de Tarefas em PSL
+
+subtitulo
+    Diferentes Status de Tarefas
+
+tarefas
+    s Tarefa marcada como concluída usando 's'
+    n Tarefa marcada como pendente usando 'n'
+    sim Tarefa marcada como concluída usando 'sim'
+    não Tarefa marcada como pendente usando 'não'
+

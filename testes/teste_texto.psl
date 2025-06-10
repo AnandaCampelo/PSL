@@ -1,0 +1,19 @@
+// Teste de formatação de texto em PSL
+
+titulo
+    Teste de Formatação de Texto
+
+paragrafo
+    Este teste verifica a capacidade da PSL de formatar parágrafos
+    que se estendem por múltiplas linhas no código fonte.
+    
+    O texto deve ser renderizado como um único parágrafo contínuo
+    no Markdown.
+
+subtitulo
+    Níveis de Títulos
+
+paragrafo
+    PSL suporta múltiplos níveis de títulos, como demonstrado
+    neste documento.
+

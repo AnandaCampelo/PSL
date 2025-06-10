@@ -1,0 +1,23 @@
+// Teste de listas em PSL
+
+titulo
+    Teste de Listas em PSL
+
+subtitulo
+    Listas Não Ordenadas
+
+lista
+    Item simples
+    Item com múltiplas
+    linhas de texto
+    Item final
+
+subtitulo
+    Listas Ordenadas
+
+enumerar
+    Primeiro item
+    Segundo item com texto
+    mais longo
+    Terceiro item
+

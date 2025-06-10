@@ -22,7 +22,7 @@ Permitir a criação de documentos Markdown dinâmicos, organizados por blocos i
 ## EBNF da linguagem PSL
 
 ```ebnf
-PROGRAMA       = { BLOCO } ;
+PROGRAMA       = { BLOCO }, FIM_ARQUIVO ;
 
 BLOCO          = COMANDO_MARCA | COMANDO_PROG ;
 
@@ -92,6 +92,8 @@ DIGITO         = "0" | "1" | ... | "9" ;
 INDENT         = "    " ; /* 4 espaços */
 ESPACO         = " ", { " " } ; /* Um ou mais espaços */
 NOVA_LINHA     = "\n" ;
+
+FIM_ARQUIVO    = NOVA_LINHA, NOVA_LINHA ;
 ```
 
 ---
@@ -149,6 +151,7 @@ nota
     Este é um comentário importante.
 
 divisor
+
 
 ```
 
