@@ -1,0 +1,35 @@
+titulo
+    Demonstração de Tabelas em PSL
+
+subtitulo
+    Estruturas de Dados Tabulares
+
+paragrafo
+    Este exemplo demonstra como criar e formatar tabelas usando
+    a linguagem PSL. As tabelas são úteis para apresentar dados
+    estruturados de forma organizada.
+
+divisor
+
+subtitulo
+    Tabela Simples
+
+tabela
+    cabecalho Nome, Idade, Profissão
+    João Silva, 32, Engenheiro
+    Maria Santos, 28, Médica
+    Carlos Oliveira, 45, Professor
+
+divisor
+
+subtitulo
+    Tabela de Comparação
+
+tabela
+    cabecalho Característica, PSL, Markdown, HTML
+    Facilidade de uso, Alta, Média, Baixa
+    Expressividade, Alta, Baixa, Alta
+    Estruturação, Alta, Baixa, Média
+
+divisor
+

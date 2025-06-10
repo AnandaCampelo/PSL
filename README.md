@@ -14,8 +14,39 @@ Permitir a criação de documentos Markdown dinâmicos, organizados por blocos i
 
 * Estrutura baseada em **indentacão**
 * Suporte a **listas**, **parágrafos**, **código**, **imagens**, **links**, **tabelas**, etc.
-* Suporte a **condicionais** e **loops**
 * Geração de arquivos `.md` automática e estruturada
+
+---
+
+## Como executar o PSL
+
+### Pré-requisitos
+
+- GCC (GNU Compiler Collection)
+- Flex (Fast Lexical Analyzer)
+- Bison (Parser Generator)
+- LLVM Development Libraries (versão 12 ou superior)
+
+### Compilação
+
+Para compilar o processador PSL, use os seguintes comandos:
+
+```bash
+# Limpar compilações anteriores
+make clean
+
+# Compilar a versão com suporte LLVM
+make psl-llvm
+
+# Ou compilar a versão básica sem LLVM
+make psl
+
+# Versão com LLVM
+./psl-llvm seu_arquivo.psl
+
+# Versão básica
+./psl seu_arquivo.psl
+```
 
 ---
 
@@ -154,5 +185,52 @@ divisor
 
 
 ```
+---
+
+## Exemplo de saída `.md`
+
+```
+# Relatório Final
+
+## Visão Geral
+
+Este relatório descreve os resultados obtidos ao longo do experimento.
 
 ---
+
+- Introdução
+- Metodologia
+- Conclusão
+
+---
+
+1. Passo 1: Coletar dados
+2. Passo 2: Analisar resultados
+3. Passo 3: Gerar gráficos
+
+---
+
+- [x] Corrigir erros
+- [ ] Adicionar conclusão
+- [x] Revisar gráficos
+- [ ] o Validar tabela
+
+---
+
+    ```python
+for i in range(3):
+    print(i)
+    ```
+
+---
+
+![Logo do Projeto](imagens/logo.png)
+
+[Repositório do Projeto](https://github.com/exemplo)
+
+> *Note:* Este é um comentário importante.
+
+---
+
+
+```
